@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no" />
+    <title>{{subject}}</title>
+    <style>
+      html, body { margin: 0 !important; padding: 0 !important; height: 100% !important; width: 100% !important; }
+      * { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt !important; mso-table-rspace: 0pt !important; border-collapse: collapse !important; }
+      img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+      a { text-decoration: none; }
+      .container { width: 100%; background: #F5F8F6; }
+      .wrap { width: 100%; max-width: 640px; margin: 0 auto; }
+      .card { background: #FFFFFF; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(11, 61, 46, 0.10); }
+      .muted { color: #5B6B64; }
+      .heading { color: #07261C; font-weight: 750; letter-spacing: -0.03em; }
+      .btn { background: linear-gradient(180deg, #0E5B2F 0%, #0B3D2E 100%); border-radius: 12px; color: #FFFFFF; display: inline-block; padding: 14px 18px; font-weight: 700; }
+      .badge { display:inline-block; background: rgba(163, 243, 107, 0.22); color: #0B3D2E; padding: 6px 10px; border-radius: 999px; font-weight: 700; font-size: 12px; }
+      .otp-box { background:#F0F3F2; border:1px solid #E3EAE6; border-radius:10px; width:44px; height:52px; font-weight:800; font-size:18px; color:#0B3D2E; }
+      @media (max-width: 600px) {
+        .px { padding-left: 18px !important; padding-right: 18px !important; }
+      }
+    </style>
+  </head>
+  <body style="background:#F5F8F6;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">{{preheader}}</div>
+    <table role="presentation" class="container" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F5F8F6;">
+      <tr>
+        <td align="center" style="padding: 28px 12px;">
+          <table role="presentation" class="wrap" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;">
+            <tr>
+              <td style="padding: 4px 6px 18px 6px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="center" style="padding: 6px 0;">
+                      <img src="https://usedrova.app/logo.png" width="44" height="44" alt="Drova" style="display:block;width:44px;height:44px;border:0;outline:none;text-decoration:none;" />
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="card">
+                  <tr>
+                    <td style="background: radial-gradient(circle at 20% 0%, rgba(163, 243, 107, 0.35) 0%, rgba(11, 61, 46, 0.0) 55%), linear-gradient(180deg, #0B3D2E 0%, #062318 100%); padding: 18px 22px;">
+                      <span class="badge" style="background: rgba(163, 243, 107, 0.22); color: #A3F36B;">DROVA</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px" style="padding: 26px 26px 10px 26px;">
+                      <div class="heading" style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 26px; line-height: 1.15;">{{heading}}</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px" style="padding: 10px 26px 18px 26px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; line-height: 1.6; color: #16352A;">
+                      {{body_html}}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px" style="padding: 0 26px 18px 26px;">
+                      {{otp_section}}
+                    </td>
+                  </tr>
+                  {{cta_section}}
+                  <tr>
+                    <td class="px" style="padding: 0 26px 24px 26px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 12px; line-height: 1.6; color: #5B6B64;">
+                      {{footer_note}}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 6px 0 6px; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 12px; color: #7A8A83;">
+                &copy; {{year}} Drova. All rights reserved.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
