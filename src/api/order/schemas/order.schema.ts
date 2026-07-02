@@ -189,7 +189,7 @@ export class Orders {
 
   @Column({
     type: 'varchar',
-    length: 255,
+    length: 2000,
     nullable: true,
   })
   paymentLink?: string;
@@ -201,7 +201,7 @@ export class Orders {
     nullable: true,
     transformer: {
       to: (v: number | null) => v,
-      from: (v: string | null) => (v === null ? null : parseFloat(v)),
+      from: (v: string | null) => (v === null ? null : Number.parseFloat(v)),
     },
   })
   totalAmount?: number;
