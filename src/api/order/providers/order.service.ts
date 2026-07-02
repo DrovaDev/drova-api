@@ -92,12 +92,6 @@ export class OrderService {
     auth: ITokenPayload | null,
     payload: CreateOrderDTO,
   ): Promise<IResponse> {
-    const businessId = this.resolveBusinessId(auth, payload.businessId);
-
-    if (!businessId) {
-      throw new BadRequestException('businessId is required');
-    }
-
     if (
       !payload.senderDetails.guestEmail ||
       !payload.senderDetails.guestContactNumber ||
@@ -109,11 +103,13 @@ export class OrderService {
     }
 
     try {
-      const business = await this.businessDb.findById(businessId);
+      const business = await this.resolveBusiness(auth, payload.businessSlug);
 
       if (!business) {
         throw new NotFoundException('Business not found');
       }
+
+      const businessId = business.id;
 
       this.assertBusinessIsOpen(business.operatingHours);
 
@@ -239,21 +235,23 @@ export class OrderService {
   }
 
   /**
-   * Resolves the businessId based on who is placing the order.
-   * - Business/Staff: uses auth.businessId from token
-   * - Customer/Guest: uses the businessId from the payload
+   * Resolves the Business entity for an incoming order.
+   * - Authenticated business: looked up by auth.businessId from the token.
+   * - Guest / rider: looked up by the slug submitted in the payload.
    */
-  private resolveBusinessId(
+  private async resolveBusiness(
     auth: ITokenPayload | null,
-    payloadBusinessId?: string,
-  ): string | undefined {
-    if (!auth) return payloadBusinessId;
-
-    if (auth.userType === UserType.BUSINESS) {
-      return auth.businessId;
+    businessSlug?: string,
+  ) {
+    if (auth?.userType === UserType.BUSINESS && auth.businessId) {
+      return this.businessDb.findById(auth.businessId);
     }
 
-    return payloadBusinessId;
+    if (!businessSlug) {
+      throw new BadRequestException('businessSlug is required');
+    }
+
+    return this.businessDb.findBySlug(businessSlug);
   }
 
   async getBusinessOrders(
@@ -523,7 +521,7 @@ export class OrderService {
     }
 
     const order = await this.orderDb.findOrderById({ orderId });
-    if (!order || order.riderId !== auth.riderId) {
+    if (order?.riderId !== auth.riderId) {
       throw new BadRequestException(
         'No active offer found for this order',
       );

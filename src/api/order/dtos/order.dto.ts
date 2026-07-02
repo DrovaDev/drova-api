@@ -128,13 +128,13 @@ export class BaseOrderDTO {
 
 export class CreateOrderDTO extends BaseOrderDTO {
   @IsOptional()
-  @IsString({ message: 'businessId must be a string' })
+  @IsString({ message: 'businessSlug must be a string' })
   @ApiPropertyOptional({
     description:
-      'ID of the business to fulfil the order (required for customers)',
-    example: '60c72b2f9b1d8c001f8e4e3a',
+      'Public slug of the business storefront (required for guests placing an order)',
+    example: 'fast-couriers-lagos',
   })
-  businessId?: string;
+  businessSlug?: string;
 }
 
 export class ManuallyAssingOrderDTO {

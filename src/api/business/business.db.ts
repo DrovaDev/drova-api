@@ -28,6 +28,21 @@ export class BusinessDb {
     });
   }
 
+  findBySlug(slug: string): Promise<Business | null> {
+    return this.businessModel.findOne({
+      where: { slug },
+      select: [
+        'id',
+        'businessName',
+        'businessState',
+        'location',
+        'deliveryScope',
+        'authId',
+        'operatingHours',
+      ],
+    });
+  }
+
   findBusinessByAuthId(authId: string): Promise<Business | null> {
     return this.businessModel.findOne({
       where: {
