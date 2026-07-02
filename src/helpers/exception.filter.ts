@@ -3,13 +3,11 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
-  BadRequestException,
   UnprocessableEntityException,
   MethodNotAllowedException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { IResponse } from '../interfaces/response.interface';
-import { Error as MongooseError } from 'mongoose';
 import { TypeORMError } from 'typeorm';
 
 // Exception filter for all modules
@@ -42,14 +40,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
           : (respMessage ?? exception.message);
       }
       errorName = exception.name;
-    } else if (exception instanceof MongooseError.ValidationError) {
-      status = 400; // Bad Request
-      message = exception.message;
-      errorName = 'ValidationError';
-    } else if (exception instanceof MongooseError.CastError) {
-      status = 400; // Bad Request
-      message = 'Invalid ID format';
-      errorName = 'CastError';
     } else if (exception instanceof TypeORMError) {
       status = 400; // Bad Request
       message = exception.message;
