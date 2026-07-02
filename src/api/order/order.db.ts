@@ -267,12 +267,7 @@ export class OrderDb {
       qb.andWhere('orders.paymentStatus = :paymentStatus', {
         paymentStatus: opts.paymentStatus,
       });
-    } else {
-      qb.andWhere('orders.paymentStatus != :paymentStatus', {
-        paymentStatus: PaymentStatus.PENDING
-      })
-    }
-
+    } 
     if (opts.pickupMethod) {
       qb.andWhere('orders.pickupMethod = :pickupMethod', {
         pickupMethod: opts.pickupMethod,
