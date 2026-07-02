@@ -13,6 +13,7 @@ import { UtilsService } from 'src/helpers/utils.service';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { RiderLocationThrottlerGuard } from './guards/rider-location-throttler.guard';
 import { RiderDb } from './rider.db';
+import { RiderLocationHandler } from './rider-location.handler';
 import { AuthenticationDataModule } from '../authentication/authentication-data.module';
 import { Wallet } from 'src/api/wallets/schemas/wallet.schema';
 import { ReviewsDb } from 'src/api/reviews/reviews.db';
@@ -34,7 +35,7 @@ import { Review } from 'src/api/reviews/schemas/review.schema';
     RiderService,
     RiderDb,
     ReviewsDb,
-    // RiderLocationHandler,
+    RiderLocationHandler,
     Helpers,
     UtilsService,
     RiderLocationThrottlerGuard,

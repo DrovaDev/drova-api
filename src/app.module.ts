@@ -14,11 +14,11 @@ import { TransactionsModule } from './api/transactions/transactions.module';
 import { NotificationModule } from './api/notification/notification.module';
 import { AccountModule } from './api/account/account.module';
 import { ReviewsModule } from './api/reviews/reviews.module';
-// import { MqttModule } from './mqtt/mqtt.module';
+import { MqttModule } from './mqtt/mqtt.module';
 
 @Module({
   imports: [
-    // MqttModule,
+    MqttModule,
     AuthenticationModule,
     BusinessModule,
     OrderModule,
