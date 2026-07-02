@@ -172,6 +172,36 @@ export class OrderService {
         },
       });
 
+      // Fire-and-forget: notify the business of the new order via in-app + email
+      this.authDb
+        .findAuthById(business.authId)
+        .then((auth) => {
+          const notifications: Promise<void>[] = [
+            this.notificationService.notifyBusinessNewOrder(
+              business.authId,
+              savedOrder.id,
+              referenceCode,
+            ),
+          ];
+          if (auth?.email) {
+            notifications.push(
+              this.emailService.sendNewOrderEmail({
+                to: auth.email,
+                businessName: business.businessName,
+                referenceCode,
+                customerName: payload.senderDetails.guestFullName,
+              }),
+            );
+          }
+          return Promise.all(notifications);
+        })
+        .catch((err) =>
+          this.logger.warn(
+            `Failed to notify business of new order ${referenceCode}`,
+            err,
+          ),
+        );
+
       return successResponse('Quotation submitted successfully', savedOrder, {
         statusCode: 201,
       });

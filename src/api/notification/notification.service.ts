@@ -143,6 +143,20 @@ export class NotificationService {
     });
   }
 
+  async notifyBusinessNewOrder(
+    authId: string,
+    orderId: string,
+    referenceCode: string,
+  ): Promise<void> {
+    await this.notificationDb.createInAppNotification({
+      authId,
+      type: 'NEW_ORDER',
+      title: 'New Delivery Request',
+      body: `Order ${referenceCode} has been placed. Review and send an invoice to get started.`,
+      data: { orderId, referenceCode },
+    });
+  }
+
   async getInAppNotifications(
     authId: string,
     opts: { unreadOnly?: boolean; limit?: number; page?: number },

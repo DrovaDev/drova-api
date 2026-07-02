@@ -588,6 +588,50 @@ export class EmailService {
     await this.sendMail({ to: opts.to, subject: copy.subject, text: copy.body });
   }
 
+  async sendNewOrderEmail(opts: {
+    to: string;
+    businessName: string;
+    referenceCode: string;
+    customerName: string;
+  }): Promise<void> {
+    const subject = `New Order Received — ${opts.referenceCode}`;
+    const preheader = `${opts.customerName} has placed a new delivery request. Review and send an invoice to get started.`;
+    const year = String(new Date().getFullYear());
+    const dashboardUrl = `${this.getAppUrl()}/dashboard/orders`;
+
+    const cta_section = `
+      <tr>
+        <td class="px" style="padding: 0 26px 24px 26px;">
+          <a class="btn" href="${this.escapeHtml(dashboardUrl)}" style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color:#FFFFFF;">View Order</a>
+        </td>
+      </tr>
+    `;
+
+    const body_html = [
+      `<div style="font-size: 14px; color:#16352A;">Hi ${this.escapeHtml(opts.businessName)},</div>`,
+      `<div style="margin-top: 10px; font-size: 14px; color:#16352A;">You have received a new delivery request from <strong>${this.escapeHtml(opts.customerName)}</strong>.</div>`,
+      `<div style="margin-top: 10px; font-size: 14px; color:#16352A;">Order Reference: <strong>${this.escapeHtml(opts.referenceCode)}</strong></div>`,
+      `<div style="margin-top: 10px; font-size: 14px; color:#16352A;">Log in to your dashboard to review the order details and send an invoice to the customer.</div>`,
+    ].join('');
+
+    const footer_note = this.escapeHtml(
+      `If you have any questions, contact ${this.getSupportEmail()}.`,
+    );
+
+    const template = await this.readTemplateFile('drova-generic.html');
+    const html = this.renderPlaceholders(template, {
+      subject: this.escapeHtml(subject),
+      preheader: this.escapeHtml(preheader),
+      heading: 'New Delivery Request',
+      body_html,
+      cta_section,
+      footer_note,
+      year,
+    });
+
+    await this.sendMail({ to: opts.to, subject, html });
+  }
+
   async sendMail(data: EmailMessage): Promise<any> {
     if (!data.html && data.text) {
       data.html = await this.renderTemplate(data);
