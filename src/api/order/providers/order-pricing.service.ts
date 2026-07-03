@@ -9,6 +9,7 @@ export interface InvoicePricingInput {
 
 export interface InvoicePricingResult extends InvoicePricingInput {
   serviceFee: number;
+  nombaFee: number;
   totalAmount: number;
 }
 
@@ -16,6 +17,8 @@ export interface InvoicePricingResult extends InvoicePricingInput {
 export class OrderPricingService {
   private readonly commissionRate: number;
   private readonly commissionCap: number;
+  private readonly nombaFeeRate: number;
+  private readonly nombaFeeCap: number;
 
   constructor(private readonly configService: ConfigService) {
     this.commissionRate = Number(
@@ -23,6 +26,12 @@ export class OrderPricingService {
     );
     this.commissionCap = Number(
       this.configService.get<string>('PLATFORM_COMMISSION_CAP') ?? '2000',
+    );
+    this.nombaFeeRate = Number(
+      this.configService.get<string>('NOMBA_FEE_RATE') ?? '0.014',
+    );
+    this.nombaFeeCap = Number(
+      this.configService.get<string>('NOMBA_FEE_CAP') ?? '1800',
     );
   }
 
@@ -35,12 +44,19 @@ export class OrderPricingService {
       this.commissionCap,
     );
 
+    const preNombaTotal = subtotal + serviceFee;
+    const nombaFee = Math.min(
+      Math.ceil(preNombaTotal * this.nombaFeeRate * 100) / 100,
+      this.nombaFeeCap,
+    );
+
     return {
       deliveryFee,
       pickupFee,
       packagingFee,
       serviceFee,
-      totalAmount: subtotal + serviceFee,
+      nombaFee,
+      totalAmount: preNombaTotal + nombaFee,
     };
   }
 }

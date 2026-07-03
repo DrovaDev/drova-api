@@ -26,6 +26,26 @@ export class EmailService {
     }
   }
 
+  private renderPriceBreakdownTable(breakdown: Record<string, any>): string {
+    const fmt = (v: number) => `&#8358;${Number(v).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+    const rows: [string, number][] = [
+      ['Delivery Fee', breakdown.deliveryFee],
+      ['Pickup Fee', breakdown.pickupFee],
+      ['Packaging Fee', breakdown.packagingFee],
+      ['Service Fee', breakdown.serviceFee],
+      ['Payment Processing Fee', breakdown.nombaFee],
+    ].filter(([, v]) => Number(v) > 0) as [string, number][];
+
+    const rowsHtml = rows
+      .map(
+        ([label, value]) =>
+          `<tr><td style="padding:3px 8px 3px 0;font-size:13px;color:#5B6B64;">${label}</td><td style="padding:3px 0;font-size:13px;color:#16352A;text-align:right;">${fmt(value)}</td></tr>`,
+      )
+      .join('');
+
+    return `<table style="margin-top:12px;width:100%;border-top:1px solid #E8EDEB;padding-top:8px;">${rowsHtml}</table>`;
+  }
+
   private escapeHtml(value: string): string {
     return value
       .replace(/&/g, '&amp;')
@@ -454,7 +474,7 @@ export class EmailService {
     `;
 
     const breakdownHtml = opts.breakdown
-      ? `<div style="margin-top: 10px; font-size: 13px; color:#5B6B64; white-space: pre-wrap;">${this.escapeHtml(JSON.stringify(opts.breakdown, null, 2))}</div>`
+      ? this.renderPriceBreakdownTable(opts.breakdown)
       : '';
 
     const noteHtml = opts.note
