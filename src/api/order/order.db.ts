@@ -445,6 +445,7 @@ export class OrderDb {
       deliveryPin?: string;
       escrowHeldAt?: Date;
       escrowReleasedAt?: Date;
+      webhookPayload?: Record<string, any>;
     },
   ): Promise<void> {
     await this.orderModel.update(orderId, {

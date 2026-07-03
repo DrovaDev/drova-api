@@ -167,7 +167,7 @@ export class Orders {
     default: 0,
     transformer: {
       to: (v: number) => v,
-      from: (v: string) => parseFloat(v),
+      from: (v: string) => Number.parseFloat(v),
     },
   })
   businessPayout: number;
@@ -235,6 +235,10 @@ export class Orders {
 
   @Column({ type: 'timestamptz', nullable: true })
   escrowReleasedAt?: Date;
+
+  @Column({ type: 'jsonb', nullable: true })
+  @Exclude()
+  webhookPayload?: Record<string, any>;
 
   @ManyToOne(() => Business, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'businessId' })

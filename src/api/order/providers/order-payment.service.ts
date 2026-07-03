@@ -73,6 +73,7 @@ export class OrderPaymentService {
         paidAt: new Date(),
         deliveryPin,
         escrowHeldAt: new Date(),
+        webhookPayload,
       }),
       this.orderDb.updateOrderStatus(order.id, OrderStatus.CONFIRMED),
     ]);
@@ -168,7 +169,9 @@ export class OrderPaymentService {
       return successResponse('Order already processed', { orderId: order.id });
     }
 
-    await this.orderDb.updateOrderPaymentStatus(order.id, PaymentStatus.FAILED);
+    await this.orderDb.updateOrderPaymentStatus(order.id, PaymentStatus.FAILED, {
+      webhookPayload,
+    });
 
     try {
       await this.transactionsService.saveWebhookMeta({

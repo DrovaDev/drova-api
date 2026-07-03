@@ -183,8 +183,8 @@ export class WebhooksService {
     const order = (payload.data as Record<string, any>)?.order;
 
     return (
-      transaction?.merchantTxRef ??
       order?.orderReference ??
+      transaction?.merchantTxRef ??
       transaction?.orderReference ??
       transaction?.transactionId
     );
