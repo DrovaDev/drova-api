@@ -14,7 +14,6 @@ import { Rider } from './schemas/rider.schema';
 import {
   CreateRiderProfileDTO,
   GetRidersQueryDto,
-  InitiateRiderPhoneValidationDTO,
   ValidateRiderPhoneNumberOtpDTO,
   ResendRiderOtpDTO,
   UpdateRiderProfileDTO,
@@ -124,13 +123,12 @@ export class RiderService {
     payload: CreateRiderProfileDTO,
     fallbackPhone: string,
   ): Partial<Rider> {
+    const { telephoneNumber: _, ...rest } = payload;
     return {
       authId,
       businessId,
-      ...payload,
-      phoneNumber: payload.phoneNumber
-        ? this.normalizePhone(payload.phoneNumber)
-        : fallbackPhone,
+      ...rest,
+      phoneNumber: fallbackPhone,
     };
   }
 
@@ -138,11 +136,12 @@ export class RiderService {
     existing: Rider,
     payload: UpdateRiderProfileDTO,
   ): Rider {
+    const { telephoneNumber, ...rest } = payload;
     return this.riderDb.createRider({
       ...existing,
-      ...payload,
-      phoneNumber: payload.phoneNumber
-        ? this.normalizePhone(payload.phoneNumber)
+      ...rest,
+      phoneNumber: telephoneNumber
+        ? this.normalizePhone(telephoneNumber)
         : existing.phoneNumber,
     });
   }
@@ -150,62 +149,6 @@ export class RiderService {
   // ---------------------------------------------------------------------------
   // Public methods
   // ---------------------------------------------------------------------------
-
-  async initiateRiderPhoneNumberValidation(
-    businessId: string,
-    payload: InitiateRiderPhoneValidationDTO,
-  ): Promise<IResponse> {
-    if (!businessId) throw new BadRequestException('businessId is required');
-    if (!payload?.telephoneNumber) {
-      throw new BadRequestException('telephoneNumber is required');
-    }
-
-    const normalizedPhone = this.normalizePhone(payload.telephoneNumber);
-
-    await this.assertBusinessExists(businessId);
-
-    const existingAuth = await this.authDb.findAuthByTelephoneNumber({
-      telephoneNumber: normalizedPhone,
-    });
-
-    if (existingAuth && existingAuth.userType !== UserType.RIDER) {
-      throw new BadRequestException(
-        'Phone number is already in use by a non-rider account',
-      );
-    }
-
-    let auth = existingAuth;
-    auth ??= await this.authDb.createAuthWithOtpTransaction({
-      auth: {
-        telephoneNumber: normalizedPhone,
-        userType: UserType.RIDER,
-        isActive: false,
-        isVerified: false,
-      },
-      otpCode: this.helpers.generateOTP(6),
-      otpExpiresAt: this.otpExpiry(),
-    });
-
-    const otp = await this.generateAndSaveOtp(auth.id);
-    this.sendOtpSafe(normalizedPhone, otp);
-
-    // Create a partial rider record tied to this business so the rider is
-    // associated even before their full profile is completed.
-    const existingRider = await this.riderDb.findRiderByAuthId(auth.id);
-    if (!existingRider) {
-      await this.riderDb.createRiderProfileWithPerformanceTransaction({
-        rider: { authId: auth.id, businessId, phoneNumber: normalizedPhone },
-        performance: {},
-      });
-    }
-
-    return {
-      status: 'success',
-      statusCode: 200,
-      message: 'OTP sent to rider phone number',
-      data: { telephoneNumber: normalizedPhone, authId: auth.id },
-    };
-  }
 
   async resendRiderOtp(
     payload: ResendRiderOtpDTO,
@@ -264,70 +207,57 @@ export class RiderService {
 
   async createRiderProfile(
     businessId: string,
-    phoneNumber: string,
     payload: CreateRiderProfileDTO,
   ): Promise<IResponse> {
     if (!businessId) throw new BadRequestException('businessId is required');
-    if (!phoneNumber)
-      throw new BadRequestException('phoneNumber is required');
     this.assertProfileFieldsPresent(payload);
 
-    const normalizedPhone = this.normalizePhone(phoneNumber);
+    const normalizedPhone = this.normalizePhone(payload.telephoneNumber);
 
     await this.assertBusinessExists(businessId);
 
-    const auth = await this.authDb.findAuthByTelephoneNumber({
+    const existingAuth = await this.authDb.findAuthByTelephoneNumber({
       telephoneNumber: normalizedPhone,
     });
-    if (!auth) {
-      throw new NotFoundException(
-        'Auth record not found for this phone number. Validate OTP first.',
-      );
-    }
-    if (auth.userType !== UserType.RIDER) {
-      throw new BadRequestException('Auth record is not a rider account');
-    }
-    if (!auth.isVerified || !auth.isActive) {
+
+    if (existingAuth && existingAuth.userType !== UserType.RIDER) {
       throw new BadRequestException(
-        'Rider phone number has not been validated yet',
+        'Phone number is already in use by a non-rider account',
       );
     }
 
-    const existingRider = await this.riderDb.findRiderByAuthId(auth.id);
+    const existingRider = existingAuth
+      ? await this.riderDb.findRiderByAuthId(existingAuth.id)
+      : null;
 
     if (existingRider?.firstName) {
       throw new BadRequestException('Rider profile already exists');
     }
 
-    if (existingRider) {
-      // Partial record exists (created at initiation) — fill in the full profile.
-      const saved = await this.riderDb.saveRider(
-        this.riderDb.createRider({
-          ...existingRider,
-          ...payload,
-          phoneNumber: payload.phoneNumber
-            ? this.normalizePhone(payload.phoneNumber)
-            : normalizedPhone,
-        }),
-      );
-      return {
-        status: 'success',
-        statusCode: 201,
-        message: 'Rider profile created successfully',
-        data: saved,
-      };
-    }
+    const auth = existingAuth ?? await this.authDb.createAuthWithOtpTransaction({
+      auth: {
+        telephoneNumber: normalizedPhone,
+        userType: UserType.RIDER,
+        isActive: false,
+        isVerified: false,
+      },
+      otpCode: this.helpers.generateOTP(6),
+      otpExpiresAt: this.otpExpiry(),
+    });
 
-    const rider = await this.riderDb.createRiderProfileWithPerformanceTransaction({
+    await this.riderDb.createRiderProfileWithPerformanceTransaction({
       rider: this.buildRiderData(auth.id, businessId, payload, normalizedPhone),
       performance: {},
     });
 
+    const otp = await this.generateAndSaveOtp(auth.id);
+    this.sendOtpSafe(normalizedPhone, otp);
+
     return {
       status: 'success',
       statusCode: 201,
-      message: 'Rider profile created successfully',
-      data: rider,
+      message: 'OTP sent successfully. Ask the rider to validate their phone number.',
+      data: { authId: auth.id, telephoneNumber: normalizedPhone },
     };
   }
 
@@ -358,14 +288,10 @@ export class RiderService {
     const fallbackPhone = this.normalizePhone(auth.telephoneNumber!);
 
     if (existingRider) {
-      // Partial record exists — fill in the full profile.
       const saved = await this.riderDb.saveRider(
         this.riderDb.createRider({
           ...existingRider,
-          ...payload,
-          phoneNumber: payload.phoneNumber
-            ? this.normalizePhone(payload.phoneNumber)
-            : fallbackPhone,
+          ...this.buildRiderData(riderAuthId, undefined, payload, fallbackPhone),
         }),
       );
       return {
@@ -508,14 +434,15 @@ export class RiderService {
         };
       }
 
+      const { telephoneNumber, ...rest } = payload;
       const created =
         await this.riderDb.createRiderProfileWithPerformanceTransaction({
           rider: {
             authId: riderAuthId,
             businessId,
-            ...payload,
-            phoneNumber: payload.phoneNumber
-              ? this.normalizePhone(payload.phoneNumber)
+            ...rest,
+            phoneNumber: telephoneNumber
+              ? this.normalizePhone(telephoneNumber)
               : undefined,
           },
           performance: {},

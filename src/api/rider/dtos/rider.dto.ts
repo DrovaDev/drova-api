@@ -19,6 +19,14 @@ import {
 import { PaginationQueryDto } from 'src/helpers/global.dto';
 
 export class CreateRiderProfileDTO {
+  @IsString({ message: 'telephoneNumber must be a string' })
+  @IsNotEmpty({ message: 'telephoneNumber is required' })
+  @ApiProperty({
+    description: 'Rider phone number (used for auth and OTP delivery)',
+    example: '+2348012345678',
+  })
+  telephoneNumber: string;
+
   @IsString({ message: 'firstName must be a string' })
   @IsNotEmpty({ message: 'firstName is required' })
   @ApiProperty({
@@ -42,14 +50,6 @@ export class CreateRiderProfileDTO {
     example: 'Michael',
   })
   otherName?: string;
-
-  @IsOptional()
-  @IsString({ message: 'phoneNumber must be a string' })
-  @ApiPropertyOptional({
-    description: 'Rider phone number',
-    example: '+2348012345678',
-  })
-  phoneNumber?: string;
 
   @IsOptional()
   @IsString({ message: 'profilePhoto must be a string' })
@@ -93,18 +93,6 @@ export class CreateRiderProfileDTO {
     example: 'Black',
   })
   vehicleColor?: string;
-}
-
-export class CreateRiderProfileRequestDTO extends CreateRiderProfileDTO {}
-
-export class InitiateRiderPhoneValidationDTO {
-  @IsString({ message: 'telephoneNumber must be a string' })
-  @IsNotEmpty({ message: 'telephoneNumber is required' })
-  @ApiProperty({
-    description: 'Rider WhatsApp phone number',
-    example: '+2348012345678',
-  })
-  telephoneNumber: string;
 }
 
 export class GetRidersQueryDto extends PaginationQueryDto {

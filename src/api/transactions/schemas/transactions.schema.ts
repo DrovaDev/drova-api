@@ -12,6 +12,7 @@ import {
 import { JournalType, JournalStatus } from 'src/constants';
 import { Orders } from 'src/api/order/schemas/order.schema';
 import { LedgerEntry } from './transaction-entries.schema';
+import { Exclude } from 'class-transformer';
 
 @Entity('ledger_journal')
 @Index(['reference'], { unique: true })
@@ -56,6 +57,7 @@ export class LedgerJournal {
   metadata?: Record<string, any>;
 
   @Column({ type: 'jsonb', nullable: true })
+  @Exclude()
   webhookMeta?: Record<string, any>;
 
   @Column({ type: 'timestamptz', nullable: true })

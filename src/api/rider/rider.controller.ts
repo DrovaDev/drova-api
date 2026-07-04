@@ -25,9 +25,8 @@ import { AuthGuard } from '../authentication/guards/authentication.guard';
 import { RolesGuard } from '../authentication/guards/roles.guard';
 import { RiderLocationThrottlerGuard } from './guards/rider-location-throttler.guard';
 import {
-  CreateRiderProfileRequestDTO,
+  CreateRiderProfileDTO,
   GetRidersQueryDto,
-  InitiateRiderPhoneValidationDTO,
   ResendRiderOtpDTO,
   UpdateRiderAvailabilityStatusDTO,
   UpdateRiderLocationDTO,
@@ -41,25 +40,6 @@ import { RiderService } from './rider.service';
 export class RiderController {
   constructor(private readonly riderService: RiderService) {}
 
-  @Post('initiate-phone-validation')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Send OTP to rider phone number (business only)' })
-  @ApiBody({ type: InitiateRiderPhoneValidationDTO })
-  async initiateRiderPhoneNumberValidation(
-    @Auth() auth: ITokenPayload,
-    @Body() payload: InitiateRiderPhoneValidationDTO,
-  ) {
-    if (!auth.businessId) {
-      throw new ForbiddenException('Business context is required');
-    }
-    return await this.riderService.initiateRiderPhoneNumberValidation(
-      auth.businessId,
-      payload,
-    );
-  }
-
   @Post('resend-otp')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserType.BUSINESS)
@@ -72,7 +52,7 @@ export class RiderController {
 
   @Post('validate-otp')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
+  @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Validate rider OTP (business only)' })
   @ApiBody({ type: ValidateRiderPhoneNumberOtpDTO })
@@ -85,15 +65,16 @@ export class RiderController {
   @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create rider profile (rider self-register or business)' })
-  @ApiBody({ type: CreateRiderProfileRequestDTO })
+  @ApiBody({ type: CreateRiderProfileDTO })
   async createRiderProfile(
     @Auth() auth: ITokenPayload,
-    @Body() payload: CreateRiderProfileRequestDTO,
+    @Body() payload: CreateRiderProfileDTO,
   ) {
+    if (!auth.businessId) {
+      throw new ForbiddenException('Business context is required');
+    }
+
     if (auth.userType === UserType.RIDER) {
-      if (!auth.businessId) {
-        throw new ForbiddenException('Business context is required');
-      }
       return await this.riderService.createRiderSelfProfile(
         auth.id,
         auth.businessId,
@@ -101,19 +82,7 @@ export class RiderController {
       );
     }
 
-    if (!auth.businessId) {
-      throw new ForbiddenException('Business context is required');
-    }
-    if (!payload.phoneNumber) {
-      throw new ForbiddenException('phoneNumber is required');
-    }
-
-    const { phoneNumber, ...profile } = payload;
-    return await this.riderService.createRiderProfile(
-      auth.businessId,
-      phoneNumber,
-      profile,
-    );
+    return await this.riderService.createRiderProfile(auth.businessId, payload);
   }
 
   @Get('me')
