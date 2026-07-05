@@ -180,7 +180,7 @@ export class UpdateRiderOrderStatusDTO {
 const ORDER_STATUS_FILTER_VALUES = [
   ...Object.values(OrderStatus),
   'quotation',
-  'active',
+  'all',
 ] as const;
 
 export type OrderStatusFilter = (typeof ORDER_STATUS_FILTER_VALUES)[number];

@@ -236,7 +236,7 @@ export class OrderDb {
   async listBusinessOrders(opts: {
     businessId: string;
     search?: string;
-    status?: OrderStatus | 'quotation' | 'active';
+    status?: OrderStatus | 'quotation' | 'all';
     paymentStatus?: PaymentStatus;
     pickupMethod?: PickupMethod;
     deliveryPriority?: DeliveryPriority;
@@ -264,7 +264,7 @@ export class OrderDb {
         qb.andWhere('orders.status IN (:...statuses)', {
           statuses: [OrderStatus.PENDING, OrderStatus.INVOICED],
         });
-      } else if (opts.status === 'active') {
+      } else if (opts.status === 'all') {
         qb.andWhere('orders.status NOT IN (:...statuses)', {
           statuses: [OrderStatus.PENDING, OrderStatus.INVOICED],
         });
