@@ -268,9 +268,7 @@ export class AnalyticsDb {
          COUNT(*)::int                                                                         AS "total",
          COUNT(*) FILTER (WHERE r."availabilityStatus" = 'available')::int                    AS "available",
          COUNT(*) FILTER (WHERE r."availabilityStatus" = 'offline')::int                      AS "offline",
-         COUNT(*) FILTER (WHERE r."availabilityStatus" = 'on_trip')::int                      AS "onTrip",
-         COUNT(*) FILTER (WHERE r."inviteStatus" = 'accepted')::int                           AS "active",
-         COUNT(*) FILTER (WHERE r."inviteStatus" = 'pending')::int                            AS "pendingInvite",
+         COUNT(*) FILTER (WHERE r."availabilityStatus" = 'on_trip')::int                      AS "onTrip",                        
          COUNT(*) FILTER (WHERE r.status = 'active')::int                                     AS "verified"
        FROM rider r
        WHERE r."businessId" = $1
@@ -284,8 +282,6 @@ export class AnalyticsDb {
       available: row.available,
       offline: row.offline,
       onTrip: row.onTrip,
-      active: row.active,
-      pendingInvite: row.pendingInvite,
       verified: row.verified,
     };
   }
