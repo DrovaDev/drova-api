@@ -82,7 +82,7 @@ export class AnalyticsController {
   @ApiOperation({
     summary: 'Business rider fleet summary',
     description:
-      'Returns total riders, breakdown by availability status (available/offline/busy), ' +
+      'Returns total riders, breakdown by availability status (available/offline/on_trip), ' +
       'active (accepted invite) vs pending invite, and verified count.',
   })
   getBusinessRidersSummary(
