@@ -132,6 +132,33 @@ export class AnalyticsService {
     return successResponse('Rider orders trend fetched successfully', data);
   }
 
+  async getRiderEarningsSummary(
+    auth: ITokenPayload,
+    query: AnalyticsQueryDto,
+  ): Promise<IResponse> {
+    this.requireRider(auth);
+    const data = await this.analyticsDb.getRiderEarningsSummary({
+      riderId: auth.riderId!,
+      startDate: query.startDate,
+      endDate: query.endDate,
+    });
+    return successResponse('Rider earnings summary fetched successfully', data);
+  }
+
+  async getRiderEarningsTrend(
+    auth: ITokenPayload,
+    query: TrendQueryDto,
+  ): Promise<IResponse> {
+    this.requireRider(auth);
+    const data = await this.analyticsDb.getRiderEarningsTrend({
+      riderId: auth.riderId!,
+      granularity: query.granularity ?? 'day',
+      startDate: query.startDate,
+      endDate: query.endDate,
+    });
+    return successResponse('Rider earnings trend fetched successfully', data);
+  }
+
   async getRiderPerformance(
     auth: ITokenPayload,
     query: AnalyticsQueryDto,

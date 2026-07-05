@@ -136,6 +136,34 @@ export class AnalyticsController {
     return this.analyticsService.getRiderSummary(auth, query);
   }
 
+  @Get('rider/earnings/summary')
+  @Roles(UserType.RIDER)
+  @ApiOperation({
+    summary: 'Rider earnings summary',
+    description:
+      'Returns current wallet balance, total earned (posted business_to_rider_payout credits), ' +
+      'total withdrawn, pending payout (earned minus withdrawn), and payout count.',
+  })
+  getRiderEarningsSummary(
+    @Auth() auth: ITokenPayload,
+    @Query() query: AnalyticsQueryDto,
+  ) {
+    return this.analyticsService.getRiderEarningsSummary(auth, query);
+  }
+
+  @Get('rider/earnings/trend')
+  @Roles(UserType.RIDER)
+  @ApiOperation({
+    summary: 'Rider earnings over time',
+    description: 'Returns earned amount and payout count bucketed by day/week/month.',
+  })
+  getRiderEarningsTrend(
+    @Auth() auth: ITokenPayload,
+    @Query() query: TrendQueryDto,
+  ) {
+    return this.analyticsService.getRiderEarningsTrend(auth, query);
+  }
+
   @Get('rider/orders/trend')
   @Roles(UserType.RIDER)
   @ApiOperation({

@@ -397,4 +397,86 @@ export class AnalyticsDb {
       avgRating: this.num(ratingRow.avgRating),
     };
   }
+
+  async getRiderEarningsSummary(opts: {
+    riderId: string;
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const params: any[] = [opts.riderId, 'RIDER'];
+    const dateClause = this.dateParams(opts, params, 'j."createdAt"');
+
+    const [[row], [walletRow]] = await Promise.all([
+      this.dataSource.query<any[]>(
+        `SELECT
+           COALESCE(SUM(e.amount)
+             FILTER (WHERE e.direction = 'credit'
+               AND j.type = 'business_to_rider_payout'
+               AND j.status = 'posted'),              0)::numeric  AS "totalEarned",
+           COALESCE(SUM(e.amount)
+             FILTER (WHERE e.direction = 'debit'
+               AND j.type = 'rider_withdrawal'
+               AND j.status = 'posted'),              0)::numeric  AS "totalWithdrawn",
+           COUNT(DISTINCT j.id)
+             FILTER (WHERE j.type = 'business_to_rider_payout'
+               AND j.status = 'posted')::int                       AS "payoutCount"
+         FROM wallet w
+         JOIN ledger_entry e ON e."walletId" = w.id
+         JOIN ledger_journal j ON j.id = e."journalId"
+         WHERE w."ownerId" = $1
+           AND w."ownerType" = $2
+           ${dateClause}`,
+        params,
+      ),
+      this.dataSource.query<any[]>(
+        `SELECT COALESCE(balance, 0)::numeric AS "currentBalance"
+         FROM wallet
+         WHERE "ownerId" = $1 AND "ownerType" = $2`,
+        [opts.riderId, 'RIDER'],
+      ),
+    ]);
+
+    const totalEarned = this.num(row.totalEarned);
+    const totalWithdrawn = this.num(row.totalWithdrawn);
+
+    return {
+      currentBalance: this.num(walletRow?.currentBalance),
+      totalEarned,
+      totalWithdrawn,
+      pendingPayout: totalEarned - totalWithdrawn,
+      payoutCount: row.payoutCount,
+    };
+  }
+
+  async getRiderEarningsTrend(opts: {
+    riderId: string;
+    granularity: 'day' | 'week' | 'month';
+    startDate?: string;
+    endDate?: string;
+  }) {
+    const g = ['day', 'week', 'month'].includes(opts.granularity)
+      ? opts.granularity
+      : 'day';
+    const params: any[] = [opts.riderId, 'RIDER'];
+    const dateClause = this.dateParams(opts, params, 'j."createdAt"');
+
+    return this.dataSource.query<any[]>(
+      `SELECT
+         DATE_TRUNC('${g}', j."createdAt")           AS "period",
+         COALESCE(SUM(e.amount), 0)::numeric          AS "earned",
+         COUNT(DISTINCT j.id)::int                    AS "payouts"
+       FROM wallet w
+       JOIN ledger_entry e ON e."walletId" = w.id
+       JOIN ledger_journal j ON j.id = e."journalId"
+       WHERE w."ownerId" = $1
+         AND w."ownerType" = $2
+         AND e.direction = 'credit'
+         AND j.type = 'business_to_rider_payout'
+         AND j.status = 'posted'
+         ${dateClause}
+       GROUP BY 1
+       ORDER BY 1 ASC`,
+      params,
+    );
+  }
 }
