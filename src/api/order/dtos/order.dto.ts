@@ -288,6 +288,57 @@ export class SendInvoiceDTO {
   note?: string;
 }
 
+export class CreateDirectOrderDTO extends BaseOrderDTO {
+  @Type(() => Number)
+  @IsNumber({}, { message: 'deliveryFee must be a number' })
+  @Min(0, { message: 'deliveryFee must be >= 0' })
+  @ApiProperty({
+    description: 'Delivery fee for this order',
+    example: 3000,
+  })
+  deliveryFee: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'pickupFee must be a number' })
+  @Min(0, { message: 'pickupFee must be >= 0' })
+  @ApiPropertyOptional({
+    description: 'Pickup fee. Only applicable when pickupMethod is business_pickup',
+    example: 500,
+  })
+  pickupFee?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'packagingFee must be a number' })
+  @Min(0, { message: 'packagingFee must be >= 0' })
+  @ApiPropertyOptional({
+    description: 'Packaging fee, if packaging was requested',
+    example: 500,
+  })
+  packagingFee?: number;
+
+  @IsOptional()
+  @IsString({ message: 'note must be a string' })
+  @ApiPropertyOptional({
+    description: 'Optional note to include in the invoice email (online payments only)',
+    example: 'Includes fragile item handling surcharge',
+  })
+  note?: string;
+
+  @IsIn(['online', 'cash', 'bank_transfer'], {
+    message: 'paymentMethod must be one of: online, cash, bank_transfer',
+  })
+  @ApiProperty({
+    description:
+      '"online" generates a Nomba payment link to share with the customer. ' +
+      '"cash" or "bank_transfer" marks the order as already paid and ready for rider assignment.',
+    enum: ['online', 'cash', 'bank_transfer'],
+    example: 'online',
+  })
+  paymentMethod!: 'online' | 'cash' | 'bank_transfer';
+}
+
 export class CancelOrderDTO {
   @IsOptional()
   @IsString({ message: 'reason must be a string' })

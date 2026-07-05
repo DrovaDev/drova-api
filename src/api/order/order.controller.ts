@@ -24,6 +24,7 @@ import type { ITokenPayload } from 'src/interfaces/token.interface';
 import { OrderService } from './providers/order.service';
 import {
   CancelOrderDTO,
+  CreateDirectOrderDTO,
   CreateOrderDTO,
   ManuallyAssingOrderDTO,
   OrderQueryDTO,
@@ -54,6 +55,24 @@ export class OrderController {
     @Body() payload: CreateOrderDTO,
   ) {
     return await this.orderService.createOrder(auth, payload);
+  }
+
+  @Post('direct')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserType.BUSINESS)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Business creates an order with pricing already set (business only)',
+    description:
+      'paymentMethod=online: generates a shareable Nomba payment link for the customer. ' +
+      'paymentMethod=cash|bank_transfer: marks the order as paid immediately — ready for rider assignment.',
+  })
+  @ApiBody({ type: CreateDirectOrderDTO })
+  async createDirectOrder(
+    @Auth() auth: ITokenPayload,
+    @Body() payload: CreateDirectOrderDTO,
+  ) {
+    return await this.orderService.createDirectOrder(auth, payload);
   }
 
   @Post(':orderId/invoice')

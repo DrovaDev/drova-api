@@ -12,6 +12,7 @@ import { OrderDb } from '../order.db';
 import { Helpers } from 'src/helpers/random-generator';
 import {
   CreateOrderDTO,
+  CreateDirectOrderDTO,
   OrderQueryDTO,
   ManuallyAssingOrderDTO,
   SendInvoiceDTO,
@@ -282,6 +283,164 @@ export class OrderService {
     }
 
     return this.businessDb.findBySlug(businessSlug);
+  }
+
+  async createDirectOrder(
+    auth: ITokenPayload,
+    payload: CreateDirectOrderDTO,
+  ): Promise<IResponse> {
+    if (!auth.businessId) {
+      throw new ForbiddenException('Business context is required');
+    }
+
+    const business = await this.businessDb.findById(auth.businessId);
+    if (!business) throw new NotFoundException('Business not found');
+
+    this.assertBusinessIsOpen(business.operatingHours);
+
+    const pickupFee = payload.pickupFee ?? 0;
+    const packagingFee = payload.packagingFee ?? 0;
+
+    if (pickupFee > 0 && payload.pickupMethod !== PickupMethod.BUSINESS_PICKUP) {
+      throw new BadRequestException(
+        'Pickup fee only applies when pickupMethod is business_pickup',
+      );
+    }
+
+    const referenceCode = this.helpers.generateOrderReference();
+
+    const savedOrder = await this.orderDb.createOrderTransaction({
+      order: {
+        referenceCode,
+        businessId: auth.businessId,
+        status: OrderStatus.PENDING,
+        pickupMethod: payload.pickupMethod,
+        deliveryPriority: payload.deliveryPriority,
+        prefferedDeliveryTime: payload.preferredDeliveryTime
+          ? new Date(payload.preferredDeliveryTime)
+          : undefined,
+        customerNote: payload.customerNote,
+        pickupInstructions: payload.pickupInstructions,
+        deliveryInstructions: payload.deliveryInstructions,
+        deliveryFee: 0,
+      },
+      items: payload.items.map((item) => ({
+        packageName: item.packageName,
+        packageDescription: item.packageDescription,
+        packageType: item.packageType,
+        quantity: item.quantity,
+        estimatedValue: item.estimatedValue,
+        estimatedWeight: item.estimatedWeight ?? null,
+        specialInstructions: item.specialInstructions ?? null,
+      })),
+      parties: {
+        guestFullName: payload.senderDetails.guestFullName,
+        guestContactNumber: payload.senderDetails.guestContactNumber,
+        guestEmail: payload.senderDetails.guestEmail,
+        recipientFullName: payload.recipientDetails.recipientFullName,
+        recipientContactNumber: payload.recipientDetails.recipientContactNumber,
+        recipientEmail: payload.recipientDetails.recipientEmail,
+      },
+      locations: {
+        pickupAddress: payload.pickupDetails.pickupAddress,
+        pickupCoordinates: {
+          type: 'Point',
+          coordinates: payload.pickupDetails.pickupCoordinates,
+        },
+        pickupCity: payload.pickupDetails.pickupCity,
+        pickupState: payload.pickupDetails.pickupState,
+        pickupNearestLandmark: payload.pickupDetails.pickupNearestLandmark,
+        pickupContactPersonName: payload.pickupDetails.pickupContactPersonName,
+        pickupContactPersonPhone:
+          payload.pickupDetails.pickupContactPersonPhoneNumber,
+        deliveryAddress: payload.deliveryDetails.deliveryAddress,
+        deliveryCoordinates: {
+          type: 'Point',
+          coordinates: payload.deliveryDetails.deliveryCoordinates,
+        },
+        deliveryState: payload.deliveryDetails.deliveryState,
+        deliveryNearestLandmark: payload.deliveryDetails.deliveryNearestLandmark,
+      },
+    });
+
+    if (payload.paymentMethod === 'online') {
+      const priceBreakdown = this.orderPricingService.calculateInvoicePricing({
+        deliveryFee: payload.deliveryFee,
+        pickupFee,
+        packagingFee,
+      });
+      const { serviceFee, totalAmount } = priceBreakdown;
+
+      const paymentReference = this.helpers.generateTxReference();
+      const checkoutOrder = await this.nombaService.createCheckoutOrder({
+        amount: totalAmount,
+        orderReference: paymentReference,
+        customerEmail: payload.senderDetails.guestEmail,
+      });
+
+      const updatedOrder = await this.orderDb.updateOrderForInvoice({
+        orderId: savedOrder.id,
+        businessId: auth.businessId,
+        deliveryFee: payload.deliveryFee,
+        pickupFee,
+        packagingFee,
+        serviceFee,
+        platformCommission: serviceFee,
+        paymentReference,
+        paymentLink: checkoutOrder.checkoutLink,
+        totalAmount,
+        priceBreakdown,
+        invoiceSentAt: new Date(),
+      });
+
+      this.paymentEmailQueue
+        .enqueueInvoiceEmail({
+          customerEmail: payload.senderDetails.guestEmail,
+          customerName: payload.senderDetails.guestFullName,
+          businessName: business.businessName,
+          referenceCode,
+          amount: totalAmount,
+          paymentLink: checkoutOrder.checkoutLink,
+          note: payload.note,
+          breakdown: priceBreakdown,
+        })
+        .catch((err) =>
+          this.logger.warn(`Failed to enqueue invoice email for ${referenceCode}`, err),
+        );
+
+      return successResponse('Order created. Share the payment link with your customer.', {
+        ...updatedOrder,
+        paymentLink: checkoutOrder.checkoutLink,
+      }, { statusCode: 201 });
+    }
+
+    // cash | bank_transfer — mark as already paid, ready for rider assignment
+    const priceBreakdown = this.orderPricingService.calculateInvoicePricing(
+      { deliveryFee: payload.deliveryFee, pickupFee, packagingFee },
+      { includeNombaFee: false },
+    );
+    const { serviceFee, totalAmount } = priceBreakdown;
+    const deliveryPin = this.helpers.generateOTP(6);
+
+    const confirmedOrder = await this.orderDb.confirmManualOrder({
+      orderId: savedOrder.id,
+      businessId: auth.businessId,
+      deliveryFee: payload.deliveryFee,
+      pickupFee,
+      packagingFee,
+      serviceFee,
+      platformCommission: serviceFee,
+      totalAmount,
+      priceBreakdown,
+      deliveryPin,
+      paymentMethod: payload.paymentMethod,
+    });
+
+    return successResponse(
+      'Order created and marked as paid. You can now assign a rider.',
+      confirmedOrder,
+      { statusCode: 201 },
+    );
   }
 
   async getBusinessOrders(

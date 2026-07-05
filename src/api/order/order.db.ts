@@ -447,6 +447,39 @@ export class OrderDb {
     });
   }
 
+  async confirmManualOrder(opts: {
+    orderId: string;
+    businessId: string;
+    deliveryFee: number;
+    pickupFee: number;
+    packagingFee: number;
+    serviceFee: number;
+    platformCommission: number;
+    totalAmount: number;
+    priceBreakdown: Record<string, any>;
+    deliveryPin: string;
+    paymentMethod: string;
+  }): Promise<Orders | null> {
+    await this.orderModel.update(opts.orderId, {
+      deliveryFee: opts.deliveryFee,
+      pickupFee: opts.pickupFee,
+      packagingFee: opts.packagingFee,
+      serviceFee: opts.serviceFee,
+      platformCommission: opts.platformCommission,
+      totalAmount: opts.totalAmount,
+      priceBreakdown: opts.priceBreakdown,
+      deliveryPin: opts.deliveryPin,
+      status: OrderStatus.CONFIRMED,
+      paymentStatus: PaymentStatus.RELEASED,
+      paidAt: new Date(),
+    });
+
+    return this.orderModel.findOne({
+      where: { id: opts.orderId },
+      relations: ['items', 'parties', 'locations', 'tracking'],
+    });
+  }
+
   async updateOrderPaymentStatus(
     orderId: string,
     paymentStatus: PaymentStatus,

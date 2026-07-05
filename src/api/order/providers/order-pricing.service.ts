@@ -35,8 +35,12 @@ export class OrderPricingService {
     );
   }
 
-  calculateInvoicePricing(input: InvoicePricingInput): InvoicePricingResult {
+  calculateInvoicePricing(
+    input: InvoicePricingInput,
+    options?: { includeNombaFee?: boolean },
+  ): InvoicePricingResult {
     const { deliveryFee, pickupFee, packagingFee } = input;
+    const includeNombaFee = options?.includeNombaFee ?? true;
     const subtotal = deliveryFee + pickupFee + packagingFee;
 
     const serviceFee = Math.min(
@@ -45,10 +49,12 @@ export class OrderPricingService {
     );
 
     const preNombaTotal = subtotal + serviceFee;
-    const nombaFee = Math.min(
-      Math.ceil(preNombaTotal * this.nombaFeeRate * 100) / 100,
-      this.nombaFeeCap,
-    );
+    const nombaFee = includeNombaFee
+      ? Math.min(
+          Math.ceil(preNombaTotal * this.nombaFeeRate * 100) / 100,
+          this.nombaFeeCap,
+        )
+      : 0;
 
     return {
       deliveryFee,
