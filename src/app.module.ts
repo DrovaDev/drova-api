@@ -15,10 +15,12 @@ import { NotificationModule } from './api/notification/notification.module';
 import { AccountModule } from './api/account/account.module';
 import { ReviewsModule } from './api/reviews/reviews.module';
 import { MqttModule } from './mqtt/mqtt.module';
+import { AnalyticsModule } from './api/analytics/analytics.module';
 
 @Module({
   imports: [
     MqttModule,
+    AnalyticsModule,
     AuthenticationModule,
     BusinessModule,
     OrderModule,
