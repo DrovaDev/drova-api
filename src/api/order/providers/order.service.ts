@@ -296,8 +296,6 @@ export class OrderService {
     const business = await this.businessDb.findById(auth.businessId);
     if (!business) throw new NotFoundException('Business not found');
 
-    this.assertBusinessIsOpen(business.operatingHours);
-
     const pickupFee = payload.pickupFee ?? 0;
     const packagingFee = payload.packagingFee ?? 0;
 
