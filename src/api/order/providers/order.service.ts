@@ -340,7 +340,7 @@ export class OrderService {
       const { orders, count } = await this.orderDb.listRiderOrders({
         riderId,
         search: query?.search,
-        status: query?.status,
+        status: query?.status as OrderStatus | undefined,
         paymentStatus: query?.paymentStatus,
         startDate: query?.startDate,
         endDate: query?.endDate,

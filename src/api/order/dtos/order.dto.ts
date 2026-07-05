@@ -4,6 +4,7 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsDateString,
@@ -176,17 +177,26 @@ export class UpdateRiderOrderStatusDTO {
   status: RiderUpdatableStatus = OrderStatus.EN_ROUTE_PICKUP;
 }
 
+const ORDER_STATUS_FILTER_VALUES = [
+  ...Object.values(OrderStatus),
+  'quotation',
+  'active',
+] as const;
+
+export type OrderStatusFilter = (typeof ORDER_STATUS_FILTER_VALUES)[number];
+
 export class OrderQueryDTO extends PaginationQueryDto {
   @IsOptional()
-  @IsEnum(OrderStatus, {
-    message: `status must be one of: ${Object.values(OrderStatus).join(', ')}`,
+  @IsIn(ORDER_STATUS_FILTER_VALUES, {
+    message: `status must be one of: ${ORDER_STATUS_FILTER_VALUES.join(', ')}`,
   })
   @ApiPropertyOptional({
-    description: 'Filter by order status',
-    enum: OrderStatus,
+    description:
+      'Filter by order status. Special values: "quotation" = pending + invoiced; "active" = all except pending/invoiced',
+    enum: ORDER_STATUS_FILTER_VALUES,
     example: OrderStatus.PENDING,
   })
-  status?: OrderStatus;
+  status?: OrderStatusFilter;
 
   @IsOptional()
   @IsEnum(PaymentStatus, {
