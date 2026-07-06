@@ -5,11 +5,13 @@ import { LedgerJournal } from './schemas/transactions.schema';
 import { LedgerEntry } from './schemas/transaction-entries.schema';
 import { Payout } from './schemas/payout.schema';
 import { Wallet } from 'src/api/wallets/schemas/wallet.schema';
+import { Rider } from 'src/api/rider/schemas/rider.schema';
 import {
   JournalStatus,
   JournalType,
   LedgerEntryDirection,
   PayoutStatus,
+  WalletOwnerType,
 } from 'src/constants';
 import { CreateJournalInput } from 'src/interfaces/journal.interface';
 
@@ -399,6 +401,35 @@ export class TransactionsDb {
     }
     if (opts.orderId) {
       qb.andWhere('journal.orderId = :orderId', { orderId: opts.orderId });
+    }
+
+    if (opts.type === JournalType.BUSINESS_TO_RIDER_PAYOUT) {
+      qb.leftJoin(
+        LedgerEntry,
+        'creditEntry',
+        'creditEntry.journalId = journal.id AND creditEntry.walletId != :walletId AND creditEntry.direction = :creditDir',
+        { creditDir: LedgerEntryDirection.CREDIT },
+      )
+        .leftJoin(
+          Wallet,
+          'riderWallet',
+          'riderWallet.id = creditEntry.walletId AND riderWallet.ownerType = :riderOwnerType',
+          { riderOwnerType: WalletOwnerType.RIDER },
+        )
+        .leftJoinAndMapOne(
+          'journal.rider',
+          Rider,
+          'rider',
+          'rider.id = riderWallet.ownerId',
+        )
+        .addSelect([
+          'rider.id',
+          'rider.firstName',
+          'rider.lastName',
+          'rider.phoneNumber',
+          'rider.profilePhoto',
+          'rider.vehicleType',
+        ]);
     }
 
     const count = await qb.getCount();
