@@ -736,6 +736,35 @@ export class TransactionsService {
     }
   }
 
+  async transferToRider(
+    auth: ITokenPayload,
+    payload: { riderId: string; amount: number; orderId?: string },
+  ): Promise<IResponse> {
+    if (!auth.businessId) {
+      throw new BadRequestException('Business context is required');
+    }
+
+    const [businessWallet, riderWallet] = await Promise.all([
+      this.walletDb.findWalletByOwner(WalletOwnerType.BUSINESS, auth.businessId),
+      this.walletDb.findWalletByOwner(WalletOwnerType.RIDER, payload.riderId),
+    ]);
+
+    if (!businessWallet) {
+      throw new NotFoundException('Business wallet not found');
+    }
+    if (!riderWallet) {
+      throw new NotFoundException('Rider wallet not found');
+    }
+
+    return this.businessToRiderPayout({
+      businessWalletId: businessWallet.id,
+      riderWalletId: riderWallet.id,
+      totalAmount: payload.amount,
+      orderId: payload.orderId,
+      metadata: { initiatedBy: auth.businessId },
+    });
+  }
+
   /**
    * Request payout (business or rider).
    */

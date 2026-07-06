@@ -28,6 +28,7 @@ import {
   CancelledBy,
   BusinessOperatingStatus,
   BusinessDayOfWeek,
+  LedgerEntryDirection
 } from 'src/constants';
 import type { BusinessOperatingHour } from 'src/constants';
 import { RiderDb } from 'src/api/rider/rider.db';
@@ -43,6 +44,7 @@ import { OrderPricingService } from './order-pricing.service';
 import { OrderPaymentService } from './order-payment.service';
 import { Orders } from '../schemas/order.schema';
 import { EmailService } from 'src/services/email.service';
+import { TransactionsDb } from 'src/api/transactions/transactions.db';
 
 const BUSINESS_ORDER_SORT_FIELDS = new Set([
   'createdAt',
@@ -83,6 +85,7 @@ export class OrderService {
     private readonly orderPricingService: OrderPricingService,
     private readonly orderPaymentService: OrderPaymentService,
     private readonly emailService: EmailService,
+    private readonly transactionsDb: TransactionsDb,
   ) {}
 
   /**
@@ -1224,7 +1227,26 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
 
-    return successResponse('Order fetched successfully', order);
+    const journals = await this.transactionsDb.findJournalsByOrder(orderId);
+    const transactions = journals.map((journal) => {
+      const totalAmount = (journal.entries ?? [])
+        .filter((e) => e.direction === LedgerEntryDirection.CREDIT)
+        .reduce((sum, e) => sum + Number(e.amount), 0);
+
+      return {
+        id: journal.id,
+        reference: journal.reference,
+        type: journal.type,
+        status: journal.status,
+        amount: totalAmount,
+        currency: journal.entries?.[0]?.currency ?? 'NGN',
+        timestamp: journal.postedAt ?? journal.createdAt,
+        metadata: journal.metadata ?? {},
+      };
+    });
+
+    const { webhookPayload: _wp, ...orderData } = order as any;
+    return successResponse('Order fetched successfully', { ...orderData, transactions });
   }
 
   async sendInvoice(

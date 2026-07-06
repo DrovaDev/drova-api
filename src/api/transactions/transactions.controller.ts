@@ -18,6 +18,7 @@ import {
   TransactionQueryDTO,
   RequestPayoutDTO,
   PayoutQueryDTO,
+  BusinessToRiderTransferDTO,
 } from './dtos/transaction.dto';
 
 @Controller('transactions')
@@ -140,5 +141,19 @@ export class TransactionsController {
   })
   async getPayoutById(@Auth() auth: ITokenPayload, @Param('id') id: string) {
     return await this.transactionsService.getPayoutById(id, auth);
+  }
+
+  @Post('rider-transfer')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(UserType.BUSINESS)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Transfer funds from business wallet to a rider wallet',
+  })
+  async transferToRider(
+    @Auth() auth: ITokenPayload,
+    @Body() payload: BusinessToRiderTransferDTO,
+  ) {
+    return await this.transactionsService.transferToRider(auth, payload);
   }
 }
