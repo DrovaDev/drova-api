@@ -151,6 +151,18 @@ export class TransactionsDb {
     input: CreateJournalInput,
   ): Promise<LedgerJournal> {
     return this.journalModel.manager.transaction(async (manager) => {
+      const totalCredits = input.entries
+        .filter((e) => e.direction === LedgerEntryDirection.CREDIT)
+        .reduce((sum, e) => sum + e.amount, 0);
+      const totalDebits = input.entries
+        .filter((e) => e.direction === LedgerEntryDirection.DEBIT)
+        .reduce((sum, e) => sum + e.amount, 0);
+      if (Math.abs(totalCredits - totalDebits) > 0.001) {
+        throw new Error(
+          `Journal entries are unbalanced: credits=${totalCredits}, debits=${totalDebits}`,
+        );
+      }
+
       const journal = await manager.save(LedgerJournal, {
         reference: input.reference,
         type: input.type,
@@ -171,17 +183,39 @@ export class TransactionsDb {
 
       await manager.save(LedgerEntry, entryEntities as LedgerEntry[]);
 
-      // Update both ledgerBalance and balance since we're posting immediately
+      // Update wallet balance field(s) based on caller intent:
+      //   'both'          (default) — balance + ledgerBalance
+      //   'balance'       — available balance only (e.g. settlement, rider payout)
+      //   'ledgerBalance' — escrow counter only (e.g. escrow refund)
+      const balanceField = input.balanceField ?? 'both';
       for (const entry of input.entries) {
         const sign = entry.direction === LedgerEntryDirection.CREDIT ? 1 : -1;
+        const update: Record<string, () => string> = {};
+        if (balanceField === 'both' || balanceField === 'balance') {
+          update['balance'] = () => `"balance" + ${sign * entry.amount}`;
+        }
+        if (balanceField === 'both' || balanceField === 'ledgerBalance') {
+          update['ledgerBalance'] = () =>
+            `"ledgerBalance" + ${sign * entry.amount}`;
+        }
+        await manager
+          .createQueryBuilder()
+          .update(Wallet)
+          .set(update)
+          .where('id = :walletId', { walletId: entry.walletId })
+          .execute();
+      }
+
+      // Apply any out-of-band ledgerBalance adjustments (e.g. escrow release on settlement).
+      // These are not part of the double-entry check — they only move the escrow counter.
+      for (const adj of input.ledgerBalanceAdjustments ?? []) {
         await manager
           .createQueryBuilder()
           .update(Wallet)
           .set({
-            balance: () => `"balance" + ${sign * entry.amount}`,
-            ledgerBalance: () => `"ledgerBalance" + ${sign * entry.amount}`,
+            ledgerBalance: () => `"ledgerBalance" + ${adj.delta}`,
           })
-          .where('id = :walletId', { walletId: entry.walletId })
+          .where('id = :walletId', { walletId: adj.walletId })
           .execute();
       }
 
@@ -220,7 +254,6 @@ export class TransactionsDb {
       journal.status = JournalStatus.FAILED;
       await manager.save(LedgerJournal, journal);
 
-      // Reverse whichever balance field was updated at createJournal time.
       const balanceField = opts?.balanceField ?? 'ledgerBalance';
       for (const entry of journal.entries) {
         const sign = entry.direction === LedgerEntryDirection.CREDIT ? -1 : 1;
@@ -266,11 +299,9 @@ export class TransactionsDb {
         throw new Error(`Cannot reverse journal in status: ${original.status}`);
       }
 
-      // Mark original as REVERSED
       original.status = JournalStatus.REVERSED;
       await manager.save(LedgerJournal, original);
 
-      // Create reversal journal with mirrored entries
       const reversalJournal = await manager.save(
         LedgerJournal,
         manager.create(LedgerJournal, {
@@ -297,7 +328,6 @@ export class TransactionsDb {
 
       await manager.save(LedgerEntry, mirroredEntries as LedgerEntry[]);
 
-      // Reverse both balance and ledgerBalance
       for (const entry of original.entries) {
         const sign = entry.direction === LedgerEntryDirection.CREDIT ? -1 : 1;
         await manager

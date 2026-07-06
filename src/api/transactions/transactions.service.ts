@@ -107,7 +107,7 @@ export class TransactionsService {
   async settleOrder(opts: {
     orderId: string;
     businessWalletId: string;
-    platformWalletId: string;
+    platformWalletId?: string;
     clearingWalletId: string;
     totalAmount: number;
     platformCommission: number;
@@ -119,6 +119,11 @@ export class TransactionsService {
     }
     if (opts.platformCommission > opts.totalAmount) {
       throw new BadRequestException('Commission cannot exceed total amount');
+    }
+    if (opts.platformCommission > 0 && !opts.platformWalletId) {
+      throw new BadRequestException(
+        'Platform wallet is required when commission is greater than zero',
+      );
     }
 
     const businessPayout = opts.totalAmount - opts.platformCommission;
@@ -137,7 +142,7 @@ export class TransactionsService {
       },
     ];
 
-    if (opts.platformCommission > 0) {
+    if (opts.platformCommission > 0 && opts.platformWalletId) {
       entries.push({
         walletId: opts.platformWalletId,
         direction: LedgerEntryDirection.CREDIT,
@@ -157,6 +162,12 @@ export class TransactionsService {
           businessPayout,
         },
         entries,
+        // Only credit available balance — ledgerBalance (escrow) is released separately below
+        balanceField: 'balance',
+        // Release the escrow counter that was set when the customer paid
+        ledgerBalanceAdjustments: [
+          { walletId: opts.businessWalletId, delta: -opts.totalAmount },
+        ],
       });
 
       return {
@@ -195,7 +206,6 @@ export class TransactionsService {
     const riderAmount = opts.totalAmount - fee;
     const reference = `JRNL-B2R-${this.helpers.generateTxReference()}`;
 
-    // Verify business has sufficient available balance
     const businessWallet = await this.walletDb.findWalletById(
       opts.businessWalletId,
     );
@@ -239,6 +249,8 @@ export class TransactionsService {
           platformFee: fee,
         },
         entries,
+        // Rider payouts are a balance transfer — do not touch ledgerBalance (escrow)
+        balanceField: 'balance',
       });
 
       return {
@@ -284,6 +296,8 @@ export class TransactionsService {
             amount: opts.amount,
           },
         ],
+        // Only reverse the escrow counter — available balance was never credited by the escrow hold
+        balanceField: 'ledgerBalance',
       });
 
       return {
@@ -338,6 +352,40 @@ export class TransactionsService {
   }): Promise<IResponse> {
     this.validateAmount(opts.amount);
 
+    // Per-wallet lock: prevents two concurrent requests from both passing the
+    // balance check before either journal deducts the balance (race condition).
+    const walletLockKey = `withdrawal:lock:${opts.walletId}`;
+    const walletLockAcquired = await this.redis.set(
+      walletLockKey,
+      '1',
+      'EX',
+      30,
+      'NX',
+    );
+    if (!walletLockAcquired) {
+      throw new BadRequestException(
+        'Another withdrawal is already in progress for this wallet. Please wait and try again.',
+      );
+    }
+
+    try {
+      return await this._requestWithdrawalLocked(opts);
+    } finally {
+      await this.redis.del(walletLockKey);
+    }
+  }
+
+  private async _requestWithdrawalLocked(opts: {
+    walletId: string;
+    amount: number;
+    destination: {
+      bankCode: string;
+      accountNumber: string;
+      accountName: string;
+    };
+    walletOwnerType: WalletOwnerType;
+    metadata?: Record<string, any>;
+  }): Promise<IResponse> {
     const wallet = await this.walletDb.findWalletById(opts.walletId);
     if (!wallet) {
       throw new NotFoundException('Wallet not found');
@@ -379,9 +427,6 @@ export class TransactionsService {
     }
 
     try {
-      // Create PENDING journal — DEBIT owner wallet, CREDIT clearing wallet.
-      // balanceField:'balance' ensures available balance is reserved immediately
-      // without touching ledgerBalance (which tracks escrow, not withdrawals).
       const journal = await this.transactionsDb.createJournal({
         reference,
         type: journalType,
@@ -459,7 +504,6 @@ export class TransactionsService {
       );
 
       if (payout.journalId) {
-        // Balance was already deducted at requestWithdrawal time — skip wallet updates.
         await this.transactionsDb.postJournal(payout.journalId, {
           skipWalletUpdates: true,
         });
@@ -501,7 +545,6 @@ export class TransactionsService {
       );
 
       if (payout.journalId) {
-        // Reverse the balance reservation made at requestWithdrawal time.
         await this.transactionsDb.failJournal(payout.journalId, {
           balanceField: 'balance',
         });
@@ -574,7 +617,7 @@ export class TransactionsService {
     await this.failWithdrawal(payout.id);
   }
 
-  // ─── Query methods ───────────────────────────────────────────────
+
 
   async getJournalById(journalId: string): Promise<IResponse> {
     const journal = await this.transactionsDb.findJournalById(journalId);
@@ -806,7 +849,6 @@ export class TransactionsService {
       throw new NotFoundException('Payout not found');
     }
 
-    // Verify ownership via wallet
     const ownerType =
       auth.userType === UserType.RIDER
         ? WalletOwnerType.RIDER

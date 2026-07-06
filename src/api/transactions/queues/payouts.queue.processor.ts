@@ -88,13 +88,15 @@ export class PayoutsQueueProcessor extends WorkerHost {
       );
 
       if (isPermanent) {
-        // Fail the journal immediately so the ledger hold is released
+        // Fail the journal immediately — restores the balance reservation made at request time
         await this.transactionsDb.updatePayoutStatus(
           payoutId,
           PayoutStatus.FAILED,
         );
         if (payout.journalId) {
-          await this.transactionsDb.failJournal(payout.journalId);
+          await this.transactionsDb.failJournal(payout.journalId, {
+            balanceField: 'balance',
+          });
         }
         return;
       }

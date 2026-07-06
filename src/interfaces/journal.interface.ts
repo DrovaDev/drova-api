@@ -13,8 +13,22 @@ export interface CreateJournalInput {
   reversalOfId?: string;
   metadata?: Record<string, any>;
   entries: CreateEntryInput[];
-  /** Which wallet balance field to update at creation time. Defaults to
-   * 'ledgerBalance' (escrow/in-flight). Use 'balance' for withdrawals so that
-   * available balance is reserved immediately without touching ledgerBalance. */
-  balanceField?: 'ledgerBalance' | 'balance';
+  /**
+   * Which wallet balance field(s) to update.
+   *
+   * createJournal (PENDING):     default 'ledgerBalance'
+   * createAndPostJournal (POSTED): default 'both'
+   *
+   * - 'ledgerBalance' — only update ledgerBalance (escrow tracking)
+   * - 'balance'       — only update available balance
+   * - 'both'          — update both fields
+   */
+  balanceField?: 'ledgerBalance' | 'balance' | 'both';
+  /**
+   * Direct ledgerBalance adjustments applied inside the same DB transaction.
+   * Used by settleOrder to atomically release the escrow counter when crediting
+   * the available balance. Not subject to the double-entry balance check.
+   * Positive delta = credit (increase), negative delta = debit (decrease).
+   */
+  ledgerBalanceAdjustments?: Array<{ walletId: string; delta: number }>;
 }

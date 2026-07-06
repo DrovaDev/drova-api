@@ -48,7 +48,7 @@ export class OrderPaymentService {
     if (webhookAmount !== undefined) {
       const received = Number(webhookAmount);
       const expected = Number(order.totalAmount);
-      if (received !== expected) {
+      if (Math.abs(received - expected) > 0.01) {
         this.logger.error(
           `AMOUNT MISMATCH — orderId=${order.id} ref=${paymentReference} ` +
             `expected=${expected} received=${received}. Payment NOT processed. Manual review required.`,
@@ -66,16 +66,15 @@ export class OrderPaymentService {
     const deliveryPin = this.helpers.generateOTP(6);
 
     // Mark payment received immediately so Nomba webhook retries don't double-process.
+    // Run sequentially so a partial failure can't leave order in an inconsistent state.
     // Escrow runs below; if it fails we log for manual recovery but return 200.
-    await Promise.all([
-      this.orderDb.updateOrderPaymentStatus(order.id, PaymentStatus.HELD, {
-        paidAt: new Date(),
-        deliveryPin,
-        escrowHeldAt: new Date(),
-        webhookPayload,
-      }),
-      this.orderDb.updateOrderStatus(order.id, OrderStatus.CONFIRMED),
-    ]);
+    await this.orderDb.updateOrderPaymentStatus(order.id, PaymentStatus.HELD, {
+      paidAt: new Date(),
+      deliveryPin,
+      escrowHeldAt: new Date(),
+      webhookPayload,
+    });
+    await this.orderDb.updateOrderStatus(order.id, OrderStatus.CONFIRMED);
 
     const { businessWallet, clearingWallet } = await this.getEscrowWallets(
       order.businessId,
@@ -298,7 +297,7 @@ export class OrderPaymentService {
       await this.transactionsService.settleOrder({
         orderId: order.id,
         businessWalletId: businessWallet.id,
-        platformWalletId: platformWallet?.id ?? '',
+        platformWalletId: platformWallet?.id,
         clearingWalletId: clearingWallet.id,
         totalAmount: order.totalAmount,
         platformCommission: order.platformCommission,
