@@ -53,7 +53,6 @@ export class Orders {
   @Column({ type: 'uuid', nullable: true })
   riderId?: string;
 
-
   @Column({
     type: 'enum',
     enum: OrderStatus,
@@ -247,7 +246,6 @@ export class Orders {
   @ManyToOne(() => Rider, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'riderId' })
   rider?: Rider;
-
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];

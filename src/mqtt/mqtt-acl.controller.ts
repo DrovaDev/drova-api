@@ -10,7 +10,7 @@ interface HiveMQAuthRequest {
 
 interface HiveMQAclRequest {
   clientid: string;
-  username: string; 
+  username: string;
   topic: string;
   action: 'publish' | 'subscribe';
 }
@@ -33,7 +33,6 @@ export class MqttAclController {
       return { result: 'deny' };
     }
   }
-
 
   @Post('acl')
   @HttpCode(200)

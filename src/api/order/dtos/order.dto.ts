@@ -303,7 +303,8 @@ export class CreateDirectOrderDTO extends BaseOrderDTO {
   @IsNumber({}, { message: 'pickupFee must be a number' })
   @Min(0, { message: 'pickupFee must be >= 0' })
   @ApiPropertyOptional({
-    description: 'Pickup fee. Only applicable when pickupMethod is business_pickup',
+    description:
+      'Pickup fee. Only applicable when pickupMethod is business_pickup',
     example: 500,
   })
   pickupFee?: number;
@@ -321,7 +322,8 @@ export class CreateDirectOrderDTO extends BaseOrderDTO {
   @IsOptional()
   @IsString({ message: 'note must be a string' })
   @ApiPropertyOptional({
-    description: 'Optional note to include in the invoice email (online payments only)',
+    description:
+      'Optional note to include in the invoice email (online payments only)',
     example: 'Includes fragile item handling surcharge',
   })
   note?: string;
@@ -364,7 +366,8 @@ export class ResendTrackingDTO {
   @IsEmail({}, { message: 'A valid email address is required' })
   @IsNotEmpty()
   @ApiProperty({
-    description: 'The email address used when placing the order. Used to verify ownership before resending.',
+    description:
+      'The email address used when placing the order. Used to verify ownership before resending.',
     example: 'sender@example.com',
   })
   email: string;

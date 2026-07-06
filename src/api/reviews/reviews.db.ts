@@ -51,10 +51,13 @@ export class ReviewsDb {
     const result = await this.reviewModel
       .createQueryBuilder('review')
       .select('AVG(review.rating)', 'average')
-      .where('review.targetId = :targetId AND review.targetType = :targetType', {
-        targetId,
-        targetType,
-      })
+      .where(
+        'review.targetId = :targetId AND review.targetType = :targetType',
+        {
+          targetId,
+          targetType,
+        },
+      )
       .getRawOne();
 
     return result ? Number.parseFloat(result.average) || 0 : 0;

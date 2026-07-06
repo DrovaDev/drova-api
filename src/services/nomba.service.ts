@@ -117,7 +117,6 @@ export class NombaService {
     }
   }
 
-
   async verifyTransaction(
     opts: IVerifyNombaTransaction,
   ): Promise<Record<string, any>> {
@@ -151,12 +150,11 @@ export class NombaService {
     }
   }
 
-  
   async fetchBanks(): Promise<INombaBank[]> {
     try {
-      const response = await this.client.get<
-        INombaResponse<INombaBank[]>
-      >('/v1/transfers/banks');
+      const response = await this.client.get<INombaResponse<INombaBank[]>>(
+        '/v1/transfers/banks',
+      );
       return response.data.data;
     } catch (error) {
       this.logger.error('Failed to fetch banks', error);
@@ -164,7 +162,6 @@ export class NombaService {
     }
   }
 
- 
   async lookupBankAccount(
     payload: ILookupNombaBankAccount,
   ): Promise<INombaBankAccountDetails> {
@@ -178,7 +175,6 @@ export class NombaService {
       throw error;
     }
   }
-
 
   async transferToBank(
     payload: ITransferToNombaBank,
@@ -198,7 +194,6 @@ export class NombaService {
     }
   }
 
-
   async getAccountBalance(): Promise<Record<string, any>> {
     try {
       const response = await this.client.get<INombaResponse>(
@@ -211,7 +206,6 @@ export class NombaService {
     }
   }
 
- 
   verifyWebhookSignature(
     payload: INombaWebhookPayload,
     headers: Record<string, string>,

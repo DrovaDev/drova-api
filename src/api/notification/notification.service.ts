@@ -51,7 +51,9 @@ export class NotificationService {
     return {
       status: 'success',
       statusCode: 200,
-      message: tokens.length ? 'Tokens fetched successfully' : 'No tokens found',
+      message: tokens.length
+        ? 'Tokens fetched successfully'
+        : 'No tokens found',
       data: tokens,
     };
   }

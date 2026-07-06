@@ -38,7 +38,8 @@ export class NotificationController {
   @Roles(UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Register or update a device token for push notifications (rider only)',
+    summary:
+      'Register or update a device token for push notifications (rider only)',
   })
   @ApiBody({ type: RegisterDeviceTokenDTO })
   async registerDeviceToken(
@@ -85,14 +86,18 @@ export class NotificationController {
         limit: limit ? Number(limit) : 20,
       },
     );
-    return successResponse('Notifications fetched successfully', result.notifications, {
-      meta: {
-        count: result.count,
-        totalPages: result.totalPages,
-        currentPage: page ? Number(page) : 1,
-        limit: limit ? Number(limit) : 20,
+    return successResponse(
+      'Notifications fetched successfully',
+      result.notifications,
+      {
+        meta: {
+          count: result.count,
+          totalPages: result.totalPages,
+          currentPage: page ? Number(page) : 1,
+          limit: limit ? Number(limit) : 20,
+        },
       },
-    });
+    );
   }
 
   @Get('inbox/unread-count')
@@ -111,8 +116,12 @@ export class NotificationController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark all in-app notifications as read' })
   async markAllAsRead(@Auth() auth: ITokenPayload) {
-    const updated = await this.notificationService.markAllNotificationsAsRead(auth.id);
-    return successResponse(`${updated} notification(s) marked as read`, { updated });
+    const updated = await this.notificationService.markAllNotificationsAsRead(
+      auth.id,
+    );
+    return successResponse(`${updated} notification(s) marked as read`, {
+      updated,
+    });
   }
 
   @Patch('inbox/:id/read')
@@ -120,11 +129,11 @@ export class NotificationController {
   @Roles(UserType.BUSINESS)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark a single in-app notification as read' })
-  async markAsRead(
-    @Auth() auth: ITokenPayload,
-    @Param('id') id: string,
-  ) {
-    const updated = await this.notificationService.markNotificationAsRead(id, auth.id);
+  async markAsRead(@Auth() auth: ITokenPayload, @Param('id') id: string) {
+    const updated = await this.notificationService.markNotificationAsRead(
+      id,
+      auth.id,
+    );
     return successResponse(
       updated ? 'Notification marked as read' : 'Notification not found',
       { updated },

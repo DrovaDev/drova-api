@@ -9,12 +9,7 @@ import {
   UseGuards,
   ForbiddenException,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiBody,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { Auth, Roles } from 'src/interfaces/customs.decorator';
 import { OptionalAuthGuard } from '../authentication/guards/optional-auth.guard';
 import { AuthGuard } from '../authentication/guards/authentication.guard';
@@ -62,7 +57,8 @@ export class OrderController {
   @Roles(UserType.BUSINESS)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Business creates an order with pricing already set (business only)',
+    summary:
+      'Business creates an order with pricing already set (business only)',
     description:
       'paymentMethod=online: generates a shareable Nomba payment link for the customer. ' +
       'paymentMethod=cash|bank_transfer: marks the order as paid immediately — ready for rider assignment.',
@@ -98,7 +94,10 @@ export class OrderController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserType.BUSINESS)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Fetch paginated and filtered orders for a business (business only)' })
+  @ApiOperation({
+    summary:
+      'Fetch paginated and filtered orders for a business (business only)',
+  })
   async getBusinessOrders(
     @Auth() auth: ITokenPayload,
     @Query() query: OrderQueryDTO,
@@ -113,7 +112,9 @@ export class OrderController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserType.BUSINESS)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Manually assign an order to a rider (business only)' })
+  @ApiOperation({
+    summary: 'Manually assign an order to a rider (business only)',
+  })
   @ApiBody({ type: ManuallyAssingOrderDTO })
   async manuallyAssignOrderToRider(
     @Auth() auth: ITokenPayload,
@@ -147,7 +148,10 @@ export class OrderController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserType.RIDER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Fetch paginated and filtered orders for the authenticated rider (rider only)' })
+  @ApiOperation({
+    summary:
+      'Fetch paginated and filtered orders for the authenticated rider (rider only)',
+  })
   async getRiderOrders(
     @Auth() auth: ITokenPayload,
     @Query() query: OrderQueryDTO,
@@ -205,10 +209,7 @@ export class OrderController {
   @Roles(UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Accept a pending order offer (rider only)' })
-  async acceptOrderOffer(
-    @Auth() auth: ITokenPayload,
-    @Param('id') id: string,
-  ) {
+  async acceptOrderOffer(@Auth() auth: ITokenPayload, @Param('id') id: string) {
     return await this.orderService.acceptOrderOffer(id, auth);
   }
 
@@ -217,10 +218,7 @@ export class OrderController {
   @Roles(UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reject a pending order offer (rider only)' })
-  async rejectOrderOffer(
-    @Auth() auth: ITokenPayload,
-    @Param('id') id: string,
-  ) {
+  async rejectOrderOffer(@Auth() auth: ITokenPayload, @Param('id') id: string) {
     return await this.orderService.rejectOrderOffer(id, auth);
   }
 

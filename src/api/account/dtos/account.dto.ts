@@ -48,7 +48,10 @@ export class UpdatePayoutAccountDTO {
 export class ResolveAccountQueryDTO {
   @IsNotEmpty()
   @IsString()
-  @ApiProperty({ example: '0123456789', description: 'Account number to resolve' })
+  @ApiProperty({
+    example: '0123456789',
+    description: 'Account number to resolve',
+  })
   accountNumber!: string;
 
   @IsNotEmpty()

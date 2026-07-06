@@ -27,7 +27,8 @@ export class EmailService {
   }
 
   private renderPriceBreakdownTable(breakdown: Record<string, any>): string {
-    const fmt = (v: number) => `&#8358;${Number(v).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
+    const fmt = (v: number) =>
+      `&#8358;${Number(v).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
     const rows: [string, number][] = [
       ['Delivery Fee', breakdown.deliveryFee],
       ['Pickup Fee', breakdown.pickupFee],
@@ -545,7 +546,13 @@ export class EmailService {
       : `No payment was collected for this order.`;
     const reasonLine = opts.reason ? `\n\nReason: ${opts.reason}` : '';
 
-    const COPY: Record<string, { sender?: { subject: string; body: string }; recipient?: { subject: string; body: string } }> = {
+    const COPY: Record<
+      string,
+      {
+        sender?: { subject: string; body: string };
+        recipient?: { subject: string; body: string };
+      }
+    > = {
       assigned: {
         sender: {
           subject: `Rider Assigned — Order ${ref}`,
@@ -605,7 +612,11 @@ export class EmailService {
     const copy = COPY[opts.status]?.[opts.kind];
     if (!copy) return;
 
-    await this.sendMail({ to: opts.to, subject: copy.subject, text: copy.body });
+    await this.sendMail({
+      to: opts.to,
+      subject: copy.subject,
+      text: copy.body,
+    });
   }
 
   async sendNewOrderEmail(opts: {

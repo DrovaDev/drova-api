@@ -48,7 +48,10 @@ export class PayoutsQueueProcessor extends WorkerHost {
       return;
     }
 
-    await this.transactionsDb.updatePayoutStatus(payoutId, PayoutStatus.PROCESSING);
+    await this.transactionsDb.updatePayoutStatus(
+      payoutId,
+      PayoutStatus.PROCESSING,
+    );
 
     try {
       const result = await this.nombaService.transferToBank({
@@ -60,7 +63,6 @@ export class PayoutsQueueProcessor extends WorkerHost {
         narration: 'Drova earnings payout',
       });
 
-    
       const providerReference = String(
         (result as Record<string, any>)?.id ??
           (result as Record<string, any>)?.transactionReference ??
@@ -87,14 +89,17 @@ export class PayoutsQueueProcessor extends WorkerHost {
 
       if (isPermanent) {
         // Fail the journal immediately so the ledger hold is released
-        await this.transactionsDb.updatePayoutStatus(payoutId, PayoutStatus.FAILED);
+        await this.transactionsDb.updatePayoutStatus(
+          payoutId,
+          PayoutStatus.FAILED,
+        );
         if (payout.journalId) {
           await this.transactionsDb.failJournal(payout.journalId);
         }
         return;
       }
 
-      throw error; 
+      throw error;
     }
   }
 

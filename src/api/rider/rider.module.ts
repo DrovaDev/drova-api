@@ -29,7 +29,13 @@ import { Review } from 'src/api/reviews/schemas/review.schema';
       },
     ]),
     AuthenticationDataModule,
-    TypeOrmModule.forFeature([Rider, RiderPerformance, Business, Wallet, Review]),
+    TypeOrmModule.forFeature([
+      Rider,
+      RiderPerformance,
+      Business,
+      Wallet,
+      Review,
+    ]),
   ],
   providers: [
     RiderService,

@@ -30,7 +30,9 @@ async function bootstrap() {
     );
 
     if (existing.length > 0) {
-      logger.log(`${label} wallet already exists (id=${existing[0].id}) — skipping`);
+      logger.log(
+        `${label} wallet already exists (id=${existing[0].id}) — skipping`,
+      );
       continue;
     }
 

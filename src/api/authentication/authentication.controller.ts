@@ -1,14 +1,20 @@
 import { Controller } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  
   ApiTags,
   ApiParam,
   ApiBody,
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
-import { Body, ForbiddenException, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { Auth, Roles } from 'src/interfaces/customs.decorator';
 import type { ITokenPayload } from 'src/interfaces/token.interface';
@@ -83,8 +89,14 @@ export class AuthenticationController {
   }
 
   @Post('validate-rider-login-otp')
-  @ApiBody({ type: ValidateRiderOtpDTO, description: 'Validate rider OTP payload' })
-  @ApiOperation({ summary: 'Validate OTP for rider login — requires deviceId for single-device enforcement' })
+  @ApiBody({
+    type: ValidateRiderOtpDTO,
+    description: 'Validate rider OTP payload',
+  })
+  @ApiOperation({
+    summary:
+      'Validate OTP for rider login — requires deviceId for single-device enforcement',
+  })
   async validateRiderLoginOTP(@Body() payload: ValidateRiderOtpDTO) {
     return await this.authService.validateRiderLoginOTP(payload);
   }
@@ -92,7 +104,10 @@ export class AuthenticationController {
   @Post('rider/logout')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Log out rider — clears device lock and session, invalidating all existing tokens' })
+  @ApiOperation({
+    summary:
+      'Log out rider — clears device lock and session, invalidating all existing tokens',
+  })
   async riderLogout(@Auth() auth: ITokenPayload) {
     if (!auth.riderId) {
       throw new ForbiddenException('Rider context is required');
@@ -103,7 +118,9 @@ export class AuthenticationController {
   @Get('me')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get the currently authenticated user and their profile' })
+  @ApiOperation({
+    summary: 'Get the currently authenticated user and their profile',
+  })
   async getMe(@Auth() auth: ITokenPayload) {
     return await this.authService.getMe(auth.id, auth.userType);
   }

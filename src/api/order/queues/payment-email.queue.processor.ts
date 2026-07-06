@@ -23,7 +23,12 @@ export class PaymentEmailQueueProcessor extends WorkerHost {
   }
 
   async process(
-    job: Job<PaymentSuccessEmailJobData | PaymentFailedEmailJobData | InvoiceEmailJobData | OrderStatusEmailJobData>,
+    job: Job<
+      | PaymentSuccessEmailJobData
+      | PaymentFailedEmailJobData
+      | InvoiceEmailJobData
+      | OrderStatusEmailJobData
+    >,
   ) {
     switch (job.name) {
       case PAYMENT_SUCCESS_EMAIL_JOB:
@@ -99,7 +104,16 @@ export class PaymentEmailQueueProcessor extends WorkerHost {
   }
 
   private async handleInvoiceEmail(job: Job<InvoiceEmailJobData>) {
-    const { to, customerName, businessName, referenceCode, amount, paymentLink, note, breakdown } = job.data;
+    const {
+      to,
+      customerName,
+      businessName,
+      referenceCode,
+      amount,
+      paymentLink,
+      note,
+      breakdown,
+    } = job.data;
 
     await this.emailService.sendInvoiceEmail({
       to,
@@ -116,7 +130,17 @@ export class PaymentEmailQueueProcessor extends WorkerHost {
   }
 
   private async handleOrderStatus(job: Job<OrderStatusEmailJobData>) {
-    const { kind, to, name, referenceCode, status, businessName, amount, wasRefunded, reason } = job.data;
+    const {
+      kind,
+      to,
+      name,
+      referenceCode,
+      status,
+      businessName,
+      amount,
+      wasRefunded,
+      reason,
+    } = job.data;
 
     await this.emailService.sendOrderStatusEmail({
       to,
@@ -130,6 +154,8 @@ export class PaymentEmailQueueProcessor extends WorkerHost {
       reason,
     });
 
-    this.logger.log(`Order status email (${status}/${kind}) sent to: ${to} for order ${referenceCode}`);
+    this.logger.log(
+      `Order status email (${status}/${kind}) sent to: ${to} for order ${referenceCode}`,
+    );
   }
 }

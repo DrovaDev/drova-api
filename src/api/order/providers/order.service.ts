@@ -223,7 +223,9 @@ export class OrderService {
    * indicate it is currently closed. WAT (UTC+1) is used as the local time.
    * No-op when operatingHours is empty/null (no restriction configured).
    */
-  private assertBusinessIsOpen(operatingHours: BusinessOperatingHour[] | undefined | null): void {
+  private assertBusinessIsOpen(
+    operatingHours: BusinessOperatingHour[] | undefined | null,
+  ): void {
     if (!operatingHours?.length) return;
 
     // Shift UTC into WAT (UTC+1) without an external library
@@ -299,7 +301,10 @@ export class OrderService {
     const pickupFee = payload.pickupFee ?? 0;
     const packagingFee = payload.packagingFee ?? 0;
 
-    if (pickupFee > 0 && payload.pickupMethod !== PickupMethod.BUSINESS_PICKUP) {
+    if (
+      pickupFee > 0 &&
+      payload.pickupMethod !== PickupMethod.BUSINESS_PICKUP
+    ) {
       throw new BadRequestException(
         'Pickup fee only applies when pickupMethod is business_pickup',
       );
@@ -357,7 +362,8 @@ export class OrderService {
           coordinates: payload.deliveryDetails.deliveryCoordinates,
         },
         deliveryState: payload.deliveryDetails.deliveryState,
-        deliveryNearestLandmark: payload.deliveryDetails.deliveryNearestLandmark,
+        deliveryNearestLandmark:
+          payload.deliveryDetails.deliveryNearestLandmark,
       },
     });
 
@@ -403,13 +409,20 @@ export class OrderService {
           breakdown: priceBreakdown,
         })
         .catch((err) =>
-          this.logger.warn(`Failed to enqueue invoice email for ${referenceCode}`, err),
+          this.logger.warn(
+            `Failed to enqueue invoice email for ${referenceCode}`,
+            err,
+          ),
         );
 
-      return successResponse('Order created. Share the payment link with your customer.', {
-        ...updatedOrder,
-        paymentLink: checkoutOrder.checkoutLink,
-      }, { statusCode: 201 });
+      return successResponse(
+        'Order created. Share the payment link with your customer.',
+        {
+          ...updatedOrder,
+          paymentLink: checkoutOrder.checkoutLink,
+        },
+        { statusCode: 201 },
+      );
     }
 
     // cash | bank_transfer — mark as already paid, ready for rider assignment
@@ -677,7 +690,8 @@ export class OrderService {
     }
 
     // Fire-and-forget: notify sender and recipient that a rider has been assigned
-    this.orderDb.findOrderById({ orderId })
+    this.orderDb
+      .findOrderById({ orderId })
       .then((order) => {
         if (!order?.parties) return;
         return this.paymentEmailQueue.enqueueOrderStatusEmail({
@@ -709,9 +723,7 @@ export class OrderService {
 
     const order = await this.orderDb.findOrderById({ orderId });
     if (order?.riderId !== auth.riderId) {
-      throw new BadRequestException(
-        'No active offer found for this order',
-      );
+      throw new BadRequestException('No active offer found for this order');
     }
 
     const expired = await this.orderDb.expireOrderOffer({
@@ -802,7 +814,10 @@ export class OrderService {
       escrowStatuses.has(result.previousStatus) &&
       result.paymentStatus === PaymentStatus.HELD
     ) {
-      await this.orderDb.updateOrderPaymentStatus(orderId, PaymentStatus.REFUNDED);
+      await this.orderDb.updateOrderPaymentStatus(
+        orderId,
+        PaymentStatus.REFUNDED,
+      );
       sideEffects.push(
         this.orderPaymentService.refundEscrowForCancellation({
           id: orderId,
@@ -835,7 +850,10 @@ export class OrderService {
       OrderStatus.ASSIGNED,
     ]);
     if (result.riderId && riderAssignedStatuses.has(result.previousStatus)) {
-      const rider = await this.riderDb.findRiderById(auth.businessId, result.riderId);
+      const rider = await this.riderDb.findRiderById(
+        auth.businessId,
+        result.riderId,
+      );
       if (rider?.authId) {
         sideEffects.push(
           this.notificationService.notifyRiderOrderUnassigned(
@@ -897,21 +915,64 @@ export class OrderService {
     }
 
     const t = order.tracking;
-    const allEvents: Array<{ event: string; label: string; timestamp: Date | null | undefined }> = [
-      { event: 'order_placed', label: 'Order Placed', timestamp: order.createdAt },
-      { event: 'invoice_sent', label: 'Invoice Sent', timestamp: order.invoiceSentAt },
-      { event: 'payment_confirmed', label: 'Payment Confirmed', timestamp: order.paidAt },
-      { event: 'rider_assigned', label: 'Rider Assigned', timestamp: t?.assignedAt },
-      { event: 'en_route_pickup', label: 'Rider En Route to Pickup', timestamp: t?.enRoutePickupAt },
-      { event: 'picked_up', label: 'Package Picked Up', timestamp: t?.pickedUpAt },
+    const allEvents: Array<{
+      event: string;
+      label: string;
+      timestamp: Date | null | undefined;
+    }> = [
+      {
+        event: 'order_placed',
+        label: 'Order Placed',
+        timestamp: order.createdAt,
+      },
+      {
+        event: 'invoice_sent',
+        label: 'Invoice Sent',
+        timestamp: order.invoiceSentAt,
+      },
+      {
+        event: 'payment_confirmed',
+        label: 'Payment Confirmed',
+        timestamp: order.paidAt,
+      },
+      {
+        event: 'rider_assigned',
+        label: 'Rider Assigned',
+        timestamp: t?.assignedAt,
+      },
+      {
+        event: 'en_route_pickup',
+        label: 'Rider En Route to Pickup',
+        timestamp: t?.enRoutePickupAt,
+      },
+      {
+        event: 'picked_up',
+        label: 'Package Picked Up',
+        timestamp: t?.pickedUpAt,
+      },
       { event: 'in_transit', label: 'In Transit', timestamp: t?.inTransitAt },
-      { event: 'arrived_at_delivery', label: 'Arrived at Delivery Location', timestamp: t?.arrivedAtDeliveryAt },
-      { event: 'completed', label: 'Delivery Confirmed', timestamp: t?.completedAt },
-      { event: 'cancelled', label: 'Order Cancelled', timestamp: t?.cancelledAt },
+      {
+        event: 'arrived_at_delivery',
+        label: 'Arrived at Delivery Location',
+        timestamp: t?.arrivedAtDeliveryAt,
+      },
+      {
+        event: 'completed',
+        label: 'Delivery Confirmed',
+        timestamp: t?.completedAt,
+      },
+      {
+        event: 'cancelled',
+        label: 'Order Cancelled',
+        timestamp: t?.cancelledAt,
+      },
     ];
 
     const timeline = allEvents
-      .filter((e): e is { event: string; label: string; timestamp: Date } => !!e.timestamp)
+      .filter(
+        (e): e is { event: string; label: string; timestamp: Date } =>
+          !!e.timestamp,
+      )
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     return successResponse('Order tracked successfully', {
@@ -930,7 +991,8 @@ export class OrderService {
       delivery: order.locations
         ? { address: order.locations.deliveryAddress }
         : undefined,
-      cancellationReason: t?.cancellationReason ?? order.cancellationReason ?? null,
+      cancellationReason:
+        t?.cancellationReason ?? order.cancellationReason ?? null,
       timeline,
     });
   }
@@ -939,7 +1001,8 @@ export class OrderService {
     referenceCode: string,
     payload: ResendTrackingDTO,
   ): Promise<IResponse> {
-    const order = await this.orderDb.findOrderWithPartiesByReferenceCode(referenceCode);
+    const order =
+      await this.orderDb.findOrderWithPartiesByReferenceCode(referenceCode);
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -985,7 +1048,8 @@ export class OrderService {
     }
 
     // Fire-and-forget: email sender/recipient based on new status
-    this.orderDb.findOrderById({ orderId })
+    this.orderDb
+      .findOrderById({ orderId })
       .then((order) => {
         if (!order?.parties) return;
         return this.paymentEmailQueue.enqueueOrderStatusEmail({
@@ -1053,7 +1117,8 @@ export class OrderService {
       await this.orderPaymentService.settleEscrow(result);
 
       // Fire-and-forget: notify sender and recipient that delivery is complete
-      this.orderDb.findOrderById({ orderId })
+      this.orderDb
+        .findOrderById({ orderId })
         .then((order) => {
           if (!order?.parties) return;
           return this.paymentEmailQueue.enqueueOrderStatusEmail({
@@ -1079,7 +1144,10 @@ export class OrderService {
     );
   }
 
-  async resendInvoice(orderId: string, auth: ITokenPayload): Promise<IResponse> {
+  async resendInvoice(
+    orderId: string,
+    auth: ITokenPayload,
+  ): Promise<IResponse> {
     if (!auth.businessId) {
       throw new ForbiddenException('Business context is required');
     }
@@ -1101,7 +1169,9 @@ export class OrderService {
 
     const customerEmail = order.parties?.guestEmail;
     if (!customerEmail) {
-      throw new BadRequestException('Customer email is missing from this order');
+      throw new BadRequestException(
+        'Customer email is missing from this order',
+      );
     }
 
     const paymentReference = this.helpers.generateTxReference();

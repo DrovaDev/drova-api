@@ -150,9 +150,7 @@ export class RiderService {
   // Public methods
   // ---------------------------------------------------------------------------
 
-  async resendRiderOtp(
-    payload: ResendRiderOtpDTO,
-  ): Promise<IResponse> {
+  async resendRiderOtp(payload: ResendRiderOtpDTO): Promise<IResponse> {
     if (!payload?.telephoneNumber) {
       throw new BadRequestException('telephoneNumber is required');
     }
@@ -234,16 +232,18 @@ export class RiderService {
       throw new BadRequestException('Rider profile already exists');
     }
 
-    const auth = existingAuth ?? await this.authDb.createAuthWithOtpTransaction({
-      auth: {
-        telephoneNumber: normalizedPhone,
-        userType: UserType.RIDER,
-        isActive: false,
-        isVerified: false,
-      },
-      otpCode: this.helpers.generateOTP(6),
-      otpExpiresAt: this.otpExpiry(),
-    });
+    const auth =
+      existingAuth ??
+      (await this.authDb.createAuthWithOtpTransaction({
+        auth: {
+          telephoneNumber: normalizedPhone,
+          userType: UserType.RIDER,
+          isActive: false,
+          isVerified: false,
+        },
+        otpCode: this.helpers.generateOTP(6),
+        otpExpiresAt: this.otpExpiry(),
+      }));
 
     await this.riderDb.createRiderProfileWithPerformanceTransaction({
       rider: this.buildRiderData(auth.id, businessId, payload, normalizedPhone),
@@ -256,7 +256,8 @@ export class RiderService {
     return {
       status: 'success',
       statusCode: 201,
-      message: 'OTP sent successfully. Ask the rider to validate their phone number.',
+      message:
+        'OTP sent successfully. Ask the rider to validate their phone number.',
       data: { authId: auth.id, telephoneNumber: normalizedPhone },
     };
   }
@@ -291,7 +292,12 @@ export class RiderService {
       const saved = await this.riderDb.saveRider(
         this.riderDb.createRider({
           ...existingRider,
-          ...this.buildRiderData(riderAuthId, undefined, payload, fallbackPhone),
+          ...this.buildRiderData(
+            riderAuthId,
+            undefined,
+            payload,
+            fallbackPhone,
+          ),
         }),
       );
       return {
@@ -302,10 +308,16 @@ export class RiderService {
       };
     }
 
-    const rider = await this.riderDb.createRiderProfileWithPerformanceTransaction({
-      rider: this.buildRiderData(riderAuthId, businessId, payload, fallbackPhone),
-      performance: {},
-    });
+    const rider =
+      await this.riderDb.createRiderProfileWithPerformanceTransaction({
+        rider: this.buildRiderData(
+          riderAuthId,
+          businessId,
+          payload,
+          fallbackPhone,
+        ),
+        performance: {},
+      });
 
     return {
       status: 'success',
@@ -373,7 +385,7 @@ export class RiderService {
         ? 'Riders fetched successfully'
         : 'No riders found',
       data: riders,
-      meta
+      meta,
     };
   }
 
@@ -381,7 +393,10 @@ export class RiderService {
     const rider = await this.riderDb.findRiderByAuthId(riderAuthId);
     if (!rider) throw new NotFoundException('Rider profile not found');
 
-    const averageRating = await this.reviewsDb.getAverageRating(rider.id, ReviewTargetType.RIDER);
+    const averageRating = await this.reviewsDb.getAverageRating(
+      rider.id,
+      ReviewTargetType.RIDER,
+    );
 
     return {
       status: 'success',
@@ -391,15 +406,15 @@ export class RiderService {
     };
   }
 
-  async getRiderById(
-    businessId: string,
-    riderId: string,
-  ): Promise<IResponse> {
+  async getRiderById(businessId: string, riderId: string): Promise<IResponse> {
     if (!riderId) throw new BadRequestException('riderId is required');
     if (!businessId) throw new BadRequestException('businessId is required');
 
     const rider = await this.findRiderOrThrow(businessId, riderId);
-    const averageRating = await this.reviewsDb.getAverageRating(rider.id, ReviewTargetType.RIDER);
+    const averageRating = await this.reviewsDb.getAverageRating(
+      rider.id,
+      ReviewTargetType.RIDER,
+    );
 
     return {
       status: 'success',
@@ -470,10 +485,7 @@ export class RiderService {
     };
   }
 
-  async deleteRider(
-    businessId: string,
-    riderId: string,
-  ): Promise<IResponse> {
+  async deleteRider(businessId: string, riderId: string): Promise<IResponse> {
     if (!riderId) throw new BadRequestException('riderId is required');
 
     const rider = await this.findRiderOrThrow(businessId, riderId);

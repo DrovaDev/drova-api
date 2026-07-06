@@ -64,7 +64,9 @@ export class RiderController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create rider profile (rider self-register or business)' })
+  @ApiOperation({
+    summary: 'Create rider profile (rider self-register or business)',
+  })
   @ApiBody({ type: CreateRiderProfileDTO })
   async createRiderProfile(
     @Auth() auth: ITokenPayload,
@@ -159,7 +161,11 @@ export class RiderController {
       throw new ForbiddenException('Business context is required');
     }
 
-    return await this.riderService.updateRiderProfile(riderId, businessId, payload);
+    return await this.riderService.updateRiderProfile(
+      riderId,
+      businessId,
+      payload,
+    );
   }
 
   @Delete(':riderId')

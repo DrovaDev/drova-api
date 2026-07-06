@@ -39,7 +39,9 @@ export class SubmitGuestReviewDTO {
 
   @IsOptional()
   @IsString()
-  @ApiPropertyOptional({ description: 'Guest email for verification (must match order)' })
+  @ApiPropertyOptional({
+    description: 'Guest email for verification (must match order)',
+  })
   guestEmail?: string;
 
   @IsNotEmpty()

@@ -45,7 +45,9 @@ export class AuthGuard implements CanActivate {
         [payload.riderId],
       );
       if (!rows.length || rows[0].sessionId !== payload.sessionId) {
-        throw new UnauthorizedException('Session expired. Please log in again.');
+        throw new UnauthorizedException(
+          'Session expired. Please log in again.',
+        );
       }
     }
 

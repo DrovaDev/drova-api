@@ -139,10 +139,7 @@ export class NotificationDb {
     return { notifications, count };
   }
 
-  async markAsRead(opts: {
-    id: string;
-    authId: string;
-  }): Promise<boolean> {
+  async markAsRead(opts: { id: string; authId: string }): Promise<boolean> {
     const result = await this.inAppModel.update(
       { id: opts.id, authId: opts.authId },
       { isRead: true },

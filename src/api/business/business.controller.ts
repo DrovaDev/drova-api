@@ -1,10 +1,5 @@
 import { Controller, Body, Get, Post, UseGuards } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiBody,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { Auth, Roles } from 'src/interfaces/customs.decorator';
 import { AuthGuard } from '../authentication/guards/authentication.guard';
 import type { ITokenPayload } from 'src/interfaces/token.interface';
@@ -84,5 +79,4 @@ export class BusinessController {
   getBusinessLookups() {
     return this.businessService.getBusinessLookups();
   }
-
 }

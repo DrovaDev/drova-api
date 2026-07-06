@@ -30,7 +30,9 @@ export class RiderDb {
   }
 
   findRiderByRiderId(riderId: string): Promise<Rider | null> {
-    return this.riderModel.findOne({ where: { id: riderId as any, isDeleted: false } });
+    return this.riderModel.findOne({
+      where: { id: riderId as any, isDeleted: false },
+    });
   }
 
   createRider(data: Partial<Rider>): Rider {
@@ -162,9 +164,7 @@ export class RiderDb {
     const count = await qb.getCount();
 
     qb.orderBy(`rider.${sortBy}`, sortOrder).skip(offset).take(limit);
-    const riders = await qb
-      .leftJoinAndSelect('rider.auth', 'auth')
-      .getMany();
+    const riders = await qb.leftJoinAndSelect('rider.auth', 'auth').getMany();
 
     return { riders, count };
   }

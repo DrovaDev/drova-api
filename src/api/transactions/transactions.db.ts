@@ -331,7 +331,11 @@ export class TransactionsDb {
       .innerJoinAndSelect('entry.journal', 'journal')
       .where('entry.walletId = :walletId', { walletId })
       .andWhere('journal.status IN (:...statuses)', {
-        statuses: [JournalStatus.POSTED, JournalStatus.REVERSED, JournalStatus.PENDING],
+        statuses: [
+          JournalStatus.POSTED,
+          JournalStatus.REVERSED,
+          JournalStatus.PENDING,
+        ],
       });
 
     if (opts.type) {

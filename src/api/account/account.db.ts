@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BankAccount, BankAccountOwnerType } from './schemas/bank-account.schema';
+import {
+  BankAccount,
+  BankAccountOwnerType,
+} from './schemas/bank-account.schema';
 
 @Injectable()
 export class AccountDb {
@@ -37,7 +40,12 @@ export class AccountDb {
   async updateBankAccount(
     ownerId: string,
     ownerType: BankAccountOwnerType,
-    updates: Partial<Pick<BankAccount, 'bankCode' | 'bankName' | 'accountNumber' | 'accountName'>>,
+    updates: Partial<
+      Pick<
+        BankAccount,
+        'bankCode' | 'bankName' | 'accountNumber' | 'accountName'
+      >
+    >,
   ): Promise<BankAccount | null> {
     await this.bankAccountModel.update({ ownerId, ownerType }, updates);
     return this.findBankAccount(ownerId, ownerType);

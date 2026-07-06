@@ -1,13 +1,5 @@
-import {
-  Controller,
-  ForbiddenException,
-  Get,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { Controller, ForbiddenException, Get, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { UserType, WalletOwnerType } from 'src/constants';
 import { Auth, Roles } from 'src/interfaces/customs.decorator';
 import type { ITokenPayload } from 'src/interfaces/token.interface';

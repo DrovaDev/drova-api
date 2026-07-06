@@ -99,7 +99,6 @@ export class Auth {
   @OneToOne(() => Business, (business) => business.auth)
   business: Business;
 
-
   @OneToMany(() => DeviceTokens, (deviceToken) => deviceToken.user)
   deviceTokens: DeviceTokens[];
 

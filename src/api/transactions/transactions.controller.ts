@@ -7,11 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Auth, Roles } from 'src/interfaces/customs.decorator';
 import { AuthGuard } from '../authentication/guards/authentication.guard';
 import { RolesGuard } from '../authentication/guards/roles.guard';

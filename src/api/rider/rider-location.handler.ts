@@ -46,7 +46,12 @@ export class RiderLocationHandler implements OnModuleInit {
       return;
     }
 
-    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    if (
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
       this.logger.warn(
         `Out-of-range coordinates from riderId=${riderId}: lat=${latitude} lng=${longitude}`,
       );
@@ -61,7 +66,10 @@ export class RiderLocationHandler implements OnModuleInit {
       return;
     }
 
-    const location: Point = { type: 'Point', coordinates: [longitude, latitude] };
+    const location: Point = {
+      type: 'Point',
+      coordinates: [longitude, latitude],
+    };
     rider.lastKnownLocation = location;
     rider.lastLocationUpdatedAt = new Date();
     await this.riderDb.saveRider(rider);

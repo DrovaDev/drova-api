@@ -4,7 +4,7 @@ import {
   NotFoundException,
   InternalServerErrorException,
   Logger,
-  Inject
+  Inject,
 } from '@nestjs/common';
 import { IResponse } from 'src/interfaces/response.interface';
 import { LedgerJournal } from './schemas/transactions.schema';
@@ -325,7 +325,6 @@ export class TransactionsService {
     }
   }
 
- 
   async requestWithdrawal(opts: {
     walletId: string;
     amount: number;
@@ -359,7 +358,9 @@ export class TransactionsService {
     let idempotencyKey: string;
     do {
       idempotencyKey = `WDR-${this.helpers.generateTxReference()}`;
-    } while (await this.transactionsDb.findPayoutByIdempotencyKey(idempotencyKey));
+    } while (
+      await this.transactionsDb.findPayoutByIdempotencyKey(idempotencyKey)
+    );
 
     const journalType =
       opts.walletOwnerType === WalletOwnerType.RIDER
@@ -515,7 +516,7 @@ export class TransactionsService {
       return;
     }
     if (payout.status === PayoutStatus.SUCCESS) {
-      return; 
+      return;
     }
     await this.confirmWithdrawal(payout.id, providerReference);
   }
@@ -524,7 +525,10 @@ export class TransactionsService {
    * Called by the payout_failed / payout_refund webhook — looks up the payout
    * and fails the journal to release the ledger hold.
    */
-  async processPayoutWebhookFailed(merchantTxRef: string, isRefund = false): Promise<void> {
+  async processPayoutWebhookFailed(
+    merchantTxRef: string,
+    isRefund = false,
+  ): Promise<void> {
     const payout =
       await this.transactionsDb.findPayoutByIdempotencyKey(merchantTxRef);
     if (!payout) {
@@ -534,7 +538,7 @@ export class TransactionsService {
       return;
     }
     if (payout.status === PayoutStatus.FAILED) {
-      return; 
+      return;
     }
     if (payout.status === PayoutStatus.SUCCESS) {
       // A refund arrives after a successful transfer — the money was already debited and
@@ -674,8 +678,12 @@ export class TransactionsService {
     payload: RequestPayoutDTO,
   ): Promise<IResponse> {
     const isRider = auth.userType === UserType.RIDER;
-    const walletOwnerType = isRider ? WalletOwnerType.RIDER : WalletOwnerType.BUSINESS;
-    const bankOwnerType = isRider ? BankAccountOwnerType.RIDER : BankAccountOwnerType.BUSINESS;
+    const walletOwnerType = isRider
+      ? WalletOwnerType.RIDER
+      : WalletOwnerType.BUSINESS;
+    const bankOwnerType = isRider
+      ? BankAccountOwnerType.RIDER
+      : BankAccountOwnerType.BUSINESS;
     const ownerId = isRider ? auth.riderId : auth.businessId;
 
     if (!ownerId) {

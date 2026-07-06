@@ -148,8 +148,7 @@ export class WebhooksService {
     successful: boolean,
   ): Promise<void> {
     const transaction = payload.data?.transaction as
-      | Record<string, any>
-      | undefined;
+      Record<string, any> | undefined;
     const merchantTxRef = transaction?.merchantTxRef as string | undefined;
 
     if (!merchantTxRef) {
@@ -159,9 +158,10 @@ export class WebhooksService {
       return;
     }
 
-    const providerReference = String(
-      transaction?.transactionReference ?? transaction?.transactionId ?? '',
-    ) || undefined;
+    const providerReference =
+      String(
+        transaction?.transactionReference ?? transaction?.transactionId ?? '',
+      ) || undefined;
 
     if (successful) {
       await this.transactionsService.processPayoutWebhookSuccess(
@@ -170,7 +170,10 @@ export class WebhooksService {
       );
     } else {
       const isRefund = payload.event_type === 'payout_refund';
-      await this.transactionsService.processPayoutWebhookFailed(merchantTxRef, isRefund);
+      await this.transactionsService.processPayoutWebhookFailed(
+        merchantTxRef,
+        isRefund,
+      );
     }
   }
 

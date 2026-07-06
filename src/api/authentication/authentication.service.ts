@@ -256,7 +256,9 @@ export class AuthenticationService {
     throw new BadRequestException('Unsupported user type');
   }
 
-  async validateRiderLoginOTP(payload: ValidateRiderOtpDTO): Promise<IResponse> {
+  async validateRiderLoginOTP(
+    payload: ValidateRiderOtpDTO,
+  ): Promise<IResponse> {
     const decoded = await this.jwtService.verifyAsync(payload.tempToken);
     const userId = decoded.id;
 
@@ -269,10 +271,7 @@ export class AuthenticationService {
     let rider = await this.riderDb.findRiderByAuthId(userId);
     if (rider) {
       // Single-device enforcement
-      if (
-        rider.activeDeviceId &&
-        rider.activeDeviceId !== payload.deviceId
-      ) {
+      if (rider.activeDeviceId && rider.activeDeviceId !== payload.deviceId) {
         throw new BadRequestException(
           'You are already logged in on another device. Please log out first.',
         );
@@ -300,7 +299,11 @@ export class AuthenticationService {
     }
 
     // A partial rider record (created at phone initiation) has no firstName yet.
-    const isProfileComplete = !!(rider?.firstName && rider?.lastName && rider?.vehicleType);
+    const isProfileComplete = !!(
+      rider?.firstName &&
+      rider?.lastName &&
+      rider?.vehicleType
+    );
 
     const accessToken = await this.jwtService.signAsync({
       id: String(userId),
@@ -549,7 +552,10 @@ export class AuthenticationService {
     } else if (userType === UserType.RIDER) {
       const rider = await this.riderDb.findRiderByAuthId(authId);
       if (rider) {
-        const averageRating = await this.reviewsDb.getAverageRating(rider.id, ReviewTargetType.RIDER);
+        const averageRating = await this.reviewsDb.getAverageRating(
+          rider.id,
+          ReviewTargetType.RIDER,
+        );
         profile = { ...rider, averageRating };
       }
     }

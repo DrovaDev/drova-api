@@ -10,9 +10,7 @@ import {
 
 @Injectable()
 export class OrderOfferQueueProducer {
-  constructor(
-    @InjectQueue(ORDER_OFFER_QUEUE) private readonly queue: Queue,
-  ) {}
+  constructor(@InjectQueue(ORDER_OFFER_QUEUE) private readonly queue: Queue) {}
 
   async enqueueOfferExpiry(data: OfferExpiryJobData): Promise<void> {
     await this.queue.add(OFFER_EXPIRY_JOB, data, {

@@ -44,8 +44,7 @@ export class OrderPaymentService {
       });
     }
 
-    const webhookAmount =
-      webhookPayload?.data?.transaction?.transactionAmount;
+    const webhookAmount = webhookPayload?.data?.transaction?.transactionAmount;
     if (webhookAmount !== undefined) {
       const received = Number(webhookAmount);
       const expected = Number(order.totalAmount);
@@ -169,9 +168,13 @@ export class OrderPaymentService {
       return successResponse('Order already processed', { orderId: order.id });
     }
 
-    await this.orderDb.updateOrderPaymentStatus(order.id, PaymentStatus.FAILED, {
-      webhookPayload,
-    });
+    await this.orderDb.updateOrderPaymentStatus(
+      order.id,
+      PaymentStatus.FAILED,
+      {
+        webhookPayload,
+      },
+    );
 
     try {
       await this.transactionsService.saveWebhookMeta({
@@ -221,7 +224,9 @@ export class OrderPaymentService {
     const amount = Number(order.totalAmount ?? 0);
 
     try {
-      const { businessWallet, clearingWallet } = await this.getEscrowWallets(order.businessId);
+      const { businessWallet, clearingWallet } = await this.getEscrowWallets(
+        order.businessId,
+      );
 
       if (!businessWallet || !clearingWallet) {
         this.logger.error(
@@ -235,7 +240,10 @@ export class OrderPaymentService {
         businessWalletId: businessWallet.id,
         clearingWalletId: clearingWallet.id,
         amount,
-        metadata: { referenceCode: order.referenceCode, reason: 'order_cancelled' },
+        metadata: {
+          referenceCode: order.referenceCode,
+          reason: 'order_cancelled',
+        },
       });
     } catch (err) {
       this.logger.error(

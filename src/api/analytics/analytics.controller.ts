@@ -1,9 +1,5 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Auth, Roles } from 'src/interfaces/customs.decorator';
 import { AuthGuard } from '../authentication/guards/authentication.guard';
 import { RolesGuard } from '../authentication/guards/roles.guard';
@@ -18,8 +14,6 @@ import { AnalyticsQueryDto, TrendQueryDto } from './dtos/analytics.dto';
 @UseGuards(AuthGuard, RolesGuard)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
-
-  // ─── business ───────────────────────────────────────────────────────────────
 
   @Get('business/summary')
   @Roles(UserType.BUSINESS)
@@ -54,7 +48,8 @@ export class AnalyticsController {
   @Roles(UserType.BUSINESS)
   @ApiOperation({
     summary: 'Business orders by status and delivery priority',
-    description: 'Returns count of orders grouped by status, and separately by delivery priority.',
+    description:
+      'Returns count of orders grouped by status, and separately by delivery priority.',
   })
   getBusinessOrdersBreakdown(
     @Auth() auth: ITokenPayload,
@@ -121,13 +116,12 @@ export class AnalyticsController {
     return this.analyticsService.getBusinessOrdersFulfillment(auth, query);
   }
 
-  // ─── rider ──────────────────────────────────────────────────────────────────
-
   @Get('rider/summary')
   @Roles(UserType.RIDER)
   @ApiOperation({
     summary: 'Rider overview KPIs',
-    description: 'Returns total assigned, completed, cancelled deliveries, and average rating.',
+    description:
+      'Returns total assigned, completed, cancelled deliveries, and average rating.',
   })
   getRiderSummary(
     @Auth() auth: ITokenPayload,
@@ -155,7 +149,8 @@ export class AnalyticsController {
   @Roles(UserType.RIDER)
   @ApiOperation({
     summary: 'Rider earnings over time',
-    description: 'Returns earned amount and payout count bucketed by day/week/month.',
+    description:
+      'Returns earned amount and payout count bucketed by day/week/month.',
   })
   getRiderEarningsTrend(
     @Auth() auth: ITokenPayload,
@@ -168,7 +163,8 @@ export class AnalyticsController {
   @Roles(UserType.RIDER)
   @ApiOperation({
     summary: 'Rider delivery volume over time',
-    description: 'Returns deliveries bucketed by day/week/month with completed count per bucket.',
+    description:
+      'Returns deliveries bucketed by day/week/month with completed count per bucket.',
   })
   getRiderOrdersTrend(
     @Auth() auth: ITokenPayload,

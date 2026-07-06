@@ -24,7 +24,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     const password = this.configService.get<string>('MQTT_PASSWORD');
 
     if (!host || !username || !password) {
-      this.logger.warn('MQTT config incomplete (MQTT_HOST / MQTT_USERNAME / MQTT_PASSWORD) — MQTT disabled');
+      this.logger.warn(
+        'MQTT config incomplete (MQTT_HOST / MQTT_USERNAME / MQTT_PASSWORD) — MQTT disabled',
+      );
       return;
     }
 

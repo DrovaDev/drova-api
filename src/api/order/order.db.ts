@@ -48,14 +48,11 @@ export class OrderDb {
         .createQueryBuilder()
         .update(Orders)
         .set({ status: OrderStatus.ASSIGNED, offerExpiresAt: () => 'NULL' })
-        .where(
-          'id = :orderId AND "riderId" = :riderId AND status = :status',
-          {
-            orderId: opts.orderId,
-            riderId: opts.riderId,
-            status: OrderStatus.OFFER_PENDING,
-          },
-        )
+        .where('id = :orderId AND "riderId" = :riderId AND status = :status', {
+          orderId: opts.orderId,
+          riderId: opts.riderId,
+          status: OrderStatus.OFFER_PENDING,
+        })
         .execute();
 
       if (!result.affected) return false;
@@ -88,14 +85,11 @@ export class OrderDb {
         riderId: () => 'NULL',
         offerExpiresAt: () => 'NULL',
       })
-      .where(
-        'id = :orderId AND "riderId" = :riderId AND status = :status',
-        {
-          orderId: opts.orderId,
-          riderId: opts.riderId,
-          status: OrderStatus.OFFER_PENDING,
-        },
-      )
+      .where('id = :orderId AND "riderId" = :riderId AND status = :status', {
+        orderId: opts.orderId,
+        riderId: opts.riderId,
+        status: OrderStatus.OFFER_PENDING,
+      })
       .execute();
 
     return (result.affected ?? 0) > 0;
@@ -230,7 +224,11 @@ export class OrderDb {
       invoiceSentAt: new Date(),
     });
 
-    return { ...order, paymentReference: opts.paymentReference, paymentLink: opts.paymentLink };
+    return {
+      ...order,
+      paymentReference: opts.paymentReference,
+      paymentLink: opts.paymentLink,
+    };
   }
 
   async listBusinessOrders(opts: {
@@ -277,7 +275,7 @@ export class OrderDb {
       qb.andWhere('orders.paymentStatus = :paymentStatus', {
         paymentStatus: opts.paymentStatus,
       });
-    } 
+    }
     if (opts.pickupMethod) {
       qb.andWhere('orders.pickupMethod = :pickupMethod', {
         pickupMethod: opts.pickupMethod,
@@ -289,7 +287,6 @@ export class OrderDb {
         deliveryPriority: opts.deliveryPriority,
       });
     }
-
 
     if (opts.startDate && opts.endDate) {
       qb.andWhere(
@@ -405,7 +402,14 @@ export class OrderDb {
 
     return this.orderModel.findOne({
       where,
-      relations: ['items', 'parties', 'locations', 'tracking', 'rider', 'business'],
+      relations: [
+        'items',
+        'parties',
+        'locations',
+        'tracking',
+        'rider',
+        'business',
+      ],
     });
   }
 
@@ -434,7 +438,9 @@ export class OrderDb {
     });
   }
 
-  async findOrderPartiesByOrderId(orderId: string): Promise<OrderParties | null> {
+  async findOrderPartiesByOrderId(
+    orderId: string,
+  ): Promise<OrderParties | null> {
     return this.orderPartiesModel.findOne({ where: { orderId } });
   }
 
@@ -515,7 +521,15 @@ export class OrderDb {
   } | null> {
     const order = await this.orderModel.findOne({
       where: { id: orderId, riderId, isDeleted: false },
-      select: ['id', 'deliveryPin', 'status', 'businessId', 'totalAmount', 'platformCommission', 'paymentStatus'],
+      select: [
+        'id',
+        'deliveryPin',
+        'status',
+        'businessId',
+        'totalAmount',
+        'platformCommission',
+        'paymentStatus',
+      ],
     });
     if (!order) return null;
     return {
@@ -573,9 +587,7 @@ export class OrderDb {
       const updated = await trackingRepo.update({ orderId }, { [field]: now });
 
       if (!updated.affected) {
-        await trackingRepo.save(
-          trackingRepo.create({ orderId, [field]: now }),
-        );
+        await trackingRepo.save(trackingRepo.create({ orderId, [field]: now }));
       }
     });
 
@@ -606,7 +618,11 @@ export class OrderDb {
     ];
 
     const order = await this.orderModel.findOne({
-      where: { id: opts.orderId, businessId: opts.businessId, isDeleted: false },
+      where: {
+        id: opts.orderId,
+        businessId: opts.businessId,
+        isDeleted: false,
+      },
       relations: ['parties', 'business'],
     });
 

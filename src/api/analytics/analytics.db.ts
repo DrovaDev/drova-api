@@ -9,8 +9,6 @@ export class AnalyticsDb {
     private readonly dataSource: DataSource,
   ) {}
 
-  // ─── helpers ────────────────────────────────────────────────────────────────
-
   private dateParams(
     opts: { startDate?: string; endDate?: string },
     params: any[],
@@ -31,8 +29,6 @@ export class AnalyticsDb {
   private num(v: any): number {
     return v === null || v === undefined ? 0 : Number(v);
   }
-
-  // ─── business ───────────────────────────────────────────────────────────────
 
   async getBusinessSummary(opts: {
     businessId: string;
@@ -285,8 +281,6 @@ export class AnalyticsDb {
       verified: row.verified,
     };
   }
-
-  // ─── rider ──────────────────────────────────────────────────────────────────
 
   async getRiderSummary(opts: {
     riderId: string;

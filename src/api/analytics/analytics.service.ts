@@ -9,8 +9,6 @@ import { AnalyticsQueryDto, TrendQueryDto } from './dtos/analytics.dto';
 export class AnalyticsService {
   constructor(private readonly analyticsDb: AnalyticsDb) {}
 
-  // ─── business ───────────────────────────────────────────────────────────────
-
   async getBusinessSummary(
     auth: ITokenPayload,
     query: AnalyticsQueryDto,
@@ -103,8 +101,6 @@ export class AnalyticsService {
     return successResponse('Fulfillment metrics fetched successfully', data);
   }
 
-  // ─── rider ──────────────────────────────────────────────────────────────────
-
   async getRiderSummary(
     auth: ITokenPayload,
     query: AnalyticsQueryDto,
@@ -171,8 +167,6 @@ export class AnalyticsService {
     });
     return successResponse('Rider performance fetched successfully', data);
   }
-
-  // ─── guards ─────────────────────────────────────────────────────────────────
 
   private requireBusiness(auth: ITokenPayload): void {
     if (!auth.businessId) {
