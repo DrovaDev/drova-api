@@ -12,7 +12,7 @@ export class PayoutsQueueProducer {
       PROCESS_PAYOUT_JOB,
       { payoutId },
       {
-        jobId: `payout:${payoutId}`,
+        jobId: `payout-${payoutId}`,
         attempts: 5,
         backoff: {
           type: 'exponential',

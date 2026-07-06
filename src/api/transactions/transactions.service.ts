@@ -369,8 +369,17 @@ export class TransactionsService {
 
     const reference = `JRNL-WDR-${this.helpers.generateTxReference()}`;
 
+    const clearingWallet = await this.walletDb.findSystemWallet(
+      WalletOwnerType.CLEARING,
+    );
+    if (!clearingWallet) {
+      throw new InternalServerErrorException(
+        'Clearing wallet not found — cannot process withdrawal',
+      );
+    }
+
     try {
-      // Create PENDING journal — reserves balance in ledgerBalance
+      // Create PENDING journal — DEBIT owner wallet, CREDIT clearing wallet
       const journal = await this.transactionsDb.createJournal({
         reference,
         type: journalType,
@@ -379,6 +388,11 @@ export class TransactionsService {
           {
             walletId: opts.walletId,
             direction: LedgerEntryDirection.DEBIT,
+            amount: opts.amount,
+          },
+          {
+            walletId: clearingWallet.id,
+            direction: LedgerEntryDirection.CREDIT,
             amount: opts.amount,
           },
         ],

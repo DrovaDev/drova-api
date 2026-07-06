@@ -95,9 +95,9 @@ export class TransactionsDb {
    */
   async postJournal(journalId: string): Promise<LedgerJournal> {
     return this.journalModel.manager.transaction(async (manager) => {
+      // Lock just the journal row — FOR UPDATE fails when combined with LEFT JOIN (relations)
       const journal = await manager.findOne(LedgerJournal, {
         where: { id: journalId },
-        relations: ['entries'],
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -108,6 +108,10 @@ export class TransactionsDb {
       if (journal.status !== JournalStatus.PENDING) {
         throw new Error(`Cannot post journal in status: ${journal.status}`);
       }
+
+      journal.entries = await manager.find(LedgerEntry, {
+        where: { journalId: journal.id },
+      });
 
       journal.status = JournalStatus.POSTED;
       journal.postedAt = new Date();
@@ -185,7 +189,6 @@ export class TransactionsDb {
     return this.journalModel.manager.transaction(async (manager) => {
       const journal = await manager.findOne(LedgerJournal, {
         where: { id: journalId },
-        relations: ['entries'],
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -196,6 +199,10 @@ export class TransactionsDb {
       if (journal.status !== JournalStatus.PENDING) {
         throw new Error(`Cannot fail journal in status: ${journal.status}`);
       }
+
+      journal.entries = await manager.find(LedgerEntry, {
+        where: { journalId: journal.id },
+      });
 
       journal.status = JournalStatus.FAILED;
       await manager.save(LedgerJournal, journal);
@@ -228,9 +235,14 @@ export class TransactionsDb {
     return this.journalModel.manager.transaction(async (manager) => {
       const original = await manager.findOne(LedgerJournal, {
         where: { id: journalId },
-        relations: ['entries'],
         lock: { mode: 'pessimistic_write' },
       });
+
+      if (original) {
+        original.entries = await manager.find(LedgerEntry, {
+          where: { journalId: original.id },
+        });
+      }
 
       if (!original) {
         throw new Error('Journal not found');
