@@ -57,7 +57,7 @@ export class RiderDb {
   async clearRiderSession(riderId: string): Promise<void> {
     await this.riderModel.update(
       { id: riderId as any },
-      { activeDeviceId: undefined, sessionId: undefined },
+      { activeDeviceId: null as any, sessionId: null as any },
     );
   }
 
