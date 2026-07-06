@@ -65,22 +65,40 @@ export class NotificationService {
     orderId: string,
     offerId: string,
   ): Promise<void> {
-    await this.sendToAuthId(authId, {
-      title: 'New Delivery Request',
-      body: 'You have a new delivery offer. Tap to view and accept.',
-      data: { type: 'ORDER_OFFER', orderId, offerId },
-    });
+    await Promise.all([
+      this.sendToAuthId(authId, {
+        title: 'New Delivery Request',
+        body: 'You have a new delivery offer. Tap to view and accept.',
+        data: { type: 'ORDER_OFFER', orderId, offerId },
+      }),
+      this.notificationDb.createInAppNotification({
+        authId,
+        type: 'ORDER_OFFER',
+        title: 'New Delivery Request',
+        body: 'You have a new delivery offer. Tap to view and accept.',
+        data: { orderId, offerId },
+      }),
+    ]);
   }
 
   async notifyRiderOrderAssigned(
     authId: string,
     orderId: string,
   ): Promise<void> {
-    await this.sendToAuthId(authId, {
-      title: 'Order Assigned',
-      body: 'You have been assigned a new delivery. Tap to view details.',
-      data: { type: 'ORDER_ASSIGNED', orderId },
-    });
+    await Promise.all([
+      this.sendToAuthId(authId, {
+        title: 'Order Assigned',
+        body: 'You have been assigned a new delivery. Tap to view details.',
+        data: { type: 'ORDER_ASSIGNED', orderId },
+      }),
+      this.notificationDb.createInAppNotification({
+        authId,
+        type: 'ORDER_ASSIGNED',
+        title: 'Order Assigned',
+        body: 'You have been assigned a new delivery. Tap to view details.',
+        data: { orderId },
+      }),
+    ]);
   }
 
   async notifyRiderOrderStatusUpdate(
@@ -88,33 +106,61 @@ export class NotificationService {
     orderId: string,
     status: string,
   ): Promise<void> {
-    await this.sendToAuthId(authId, {
-      title: 'Order Update',
-      body: `Your order status has been updated to ${status.replace(/_/g, ' ')}.`,
-      data: { type: 'ORDER_STATUS_UPDATE', orderId, status },
-    });
+    const body = `Your order status has been updated to ${status.replace(/_/g, ' ')}.`;
+    await Promise.all([
+      this.sendToAuthId(authId, {
+        title: 'Order Update',
+        body,
+        data: { type: 'ORDER_STATUS_UPDATE', orderId, status },
+      }),
+      this.notificationDb.createInAppNotification({
+        authId,
+        type: 'ORDER_STATUS_UPDATE',
+        title: 'Order Update',
+        body,
+        data: { orderId, status },
+      }),
+    ]);
   }
 
   async notifyRiderOrderCompleted(
     authId: string,
     orderId: string,
   ): Promise<void> {
-    await this.sendToAuthId(authId, {
-      title: 'Delivery Confirmed',
-      body: 'The delivery has been confirmed by the recipient. Well done!',
-      data: { type: 'ORDER_COMPLETED', orderId },
-    });
+    await Promise.all([
+      this.sendToAuthId(authId, {
+        title: 'Delivery Confirmed',
+        body: 'The delivery has been confirmed by the recipient. Well done!',
+        data: { type: 'ORDER_COMPLETED', orderId },
+      }),
+      this.notificationDb.createInAppNotification({
+        authId,
+        type: 'ORDER_COMPLETED',
+        title: 'Delivery Confirmed',
+        body: 'The delivery has been confirmed by the recipient. Well done!',
+        data: { orderId },
+      }),
+    ]);
   }
 
   async notifyRiderOrderUnassigned(
     authId: string,
     orderId: string,
   ): Promise<void> {
-    await this.sendToAuthId(authId, {
-      title: 'Order Reassigned',
-      body: 'This order has been reassigned to another rider.',
-      data: { type: 'ORDER_UNASSIGNED', orderId },
-    });
+    await Promise.all([
+      this.sendToAuthId(authId, {
+        title: 'Order Reassigned',
+        body: 'This order has been reassigned to another rider.',
+        data: { type: 'ORDER_UNASSIGNED', orderId },
+      }),
+      this.notificationDb.createInAppNotification({
+        authId,
+        type: 'ORDER_UNASSIGNED',
+        title: 'Order Reassigned',
+        body: 'This order has been reassigned to another rider.',
+        data: { orderId },
+      }),
+    ]);
   }
 
   async notifyBusinessOfferExpired(

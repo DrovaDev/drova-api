@@ -66,9 +66,9 @@ export class NotificationController {
 
   @Get('inbox')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
+  @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Fetch in-app notifications for the business' })
+  @ApiOperation({ summary: 'Fetch in-app notifications for the authenticated user' })
   @ApiQuery({ name: 'unreadOnly', required: false, type: Boolean })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -102,7 +102,7 @@ export class NotificationController {
 
   @Get('inbox/unread-count')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
+  @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get count of unread in-app notifications' })
   async getUnreadCount(@Auth() auth: ITokenPayload) {
@@ -112,7 +112,7 @@ export class NotificationController {
 
   @Patch('inbox/read-all')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
+  @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark all in-app notifications as read' })
   async markAllAsRead(@Auth() auth: ITokenPayload) {
@@ -126,7 +126,7 @@ export class NotificationController {
 
   @Patch('inbox/:id/read')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
+  @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mark a single in-app notification as read' })
   async markAsRead(@Auth() auth: ITokenPayload, @Param('id') id: string) {
