@@ -13,4 +13,8 @@ export interface CreateJournalInput {
   reversalOfId?: string;
   metadata?: Record<string, any>;
   entries: CreateEntryInput[];
+  /** Which wallet balance field to update at creation time. Defaults to
+   * 'ledgerBalance' (escrow/in-flight). Use 'balance' for withdrawals so that
+   * available balance is reserved immediately without touching ledgerBalance. */
+  balanceField?: 'ledgerBalance' | 'balance';
 }

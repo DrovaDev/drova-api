@@ -69,14 +69,18 @@ export class TransactionsDb {
       }
       await manager.save(LedgerEntry, entryEntities as LedgerEntry[]);
 
-      // Update ledgerBalance for each entry (tracks pending + posted)
+      // Update the appropriate balance field.
+      // ledgerBalance = escrow/in-flight money; balance = available for withdrawal.
+      // Withdrawals pass balanceField:'balance' so available balance is reserved
+      // immediately without touching the escrow ledger.
+      const balanceField = input.balanceField ?? 'ledgerBalance';
       for (const entry of input.entries) {
         const sign = entry.direction === LedgerEntryDirection.CREDIT ? 1 : -1;
         await manager
           .createQueryBuilder()
           .update(Wallet)
           .set({
-            ledgerBalance: () => `"ledgerBalance" + ${sign * entry.amount}`,
+            [balanceField]: () => `"${balanceField}" + ${sign * entry.amount}`,
           })
           .where('id = :walletId', { walletId: entry.walletId })
           .execute();
@@ -93,7 +97,10 @@ export class TransactionsDb {
    * Posts a PENDING journal — updates status to POSTED,
    * sets postedAt, and updates wallet available balances.
    */
-  async postJournal(journalId: string): Promise<LedgerJournal> {
+  async postJournal(
+    journalId: string,
+    opts?: { skipWalletUpdates?: boolean },
+  ): Promise<LedgerJournal> {
     return this.journalModel.manager.transaction(async (manager) => {
       // Lock just the journal row — FOR UPDATE fails when combined with LEFT JOIN (relations)
       const journal = await manager.findOne(LedgerJournal, {
@@ -117,17 +124,20 @@ export class TransactionsDb {
       journal.postedAt = new Date();
       await manager.save(LedgerJournal, journal);
 
-      // Update available balance for each entry
-      for (const entry of journal.entries) {
-        const sign = entry.direction === LedgerEntryDirection.CREDIT ? 1 : -1;
-        await manager
-          .createQueryBuilder()
-          .update(Wallet)
-          .set({
-            balance: () => `"balance" + ${sign * entry.amount}`,
-          })
-          .where('id = :walletId', { walletId: entry.walletId })
-          .execute();
+      // For withdrawal journals, balance was already deducted at createJournal time
+      // so we skip the update here to avoid a double-deduction.
+      if (!opts?.skipWalletUpdates) {
+        for (const entry of journal.entries) {
+          const sign = entry.direction === LedgerEntryDirection.CREDIT ? 1 : -1;
+          await manager
+            .createQueryBuilder()
+            .update(Wallet)
+            .set({
+              balance: () => `"balance" + ${sign * entry.amount}`,
+            })
+            .where('id = :walletId', { walletId: entry.walletId })
+            .execute();
+        }
       }
 
       return journal;
@@ -185,7 +195,10 @@ export class TransactionsDb {
   /**
    * Marks a journal as FAILED and reverses ledgerBalance changes.
    */
-  async failJournal(journalId: string): Promise<LedgerJournal> {
+  async failJournal(
+    journalId: string,
+    opts?: { balanceField?: 'ledgerBalance' | 'balance' },
+  ): Promise<LedgerJournal> {
     return this.journalModel.manager.transaction(async (manager) => {
       const journal = await manager.findOne(LedgerJournal, {
         where: { id: journalId },
@@ -207,14 +220,15 @@ export class TransactionsDb {
       journal.status = JournalStatus.FAILED;
       await manager.save(LedgerJournal, journal);
 
-      // Reverse the ledgerBalance updates made at creation
+      // Reverse whichever balance field was updated at createJournal time.
+      const balanceField = opts?.balanceField ?? 'ledgerBalance';
       for (const entry of journal.entries) {
         const sign = entry.direction === LedgerEntryDirection.CREDIT ? -1 : 1;
         await manager
           .createQueryBuilder()
           .update(Wallet)
           .set({
-            ledgerBalance: () => `"ledgerBalance" + ${sign * entry.amount}`,
+            [balanceField]: () => `"${balanceField}" + ${sign * entry.amount}`,
           })
           .where('id = :walletId', { walletId: entry.walletId })
           .execute();

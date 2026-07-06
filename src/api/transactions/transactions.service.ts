@@ -379,11 +379,14 @@ export class TransactionsService {
     }
 
     try {
-      // Create PENDING journal — DEBIT owner wallet, CREDIT clearing wallet
+      // Create PENDING journal — DEBIT owner wallet, CREDIT clearing wallet.
+      // balanceField:'balance' ensures available balance is reserved immediately
+      // without touching ledgerBalance (which tracks escrow, not withdrawals).
       const journal = await this.transactionsDb.createJournal({
         reference,
         type: journalType,
         metadata: opts.metadata,
+        balanceField: 'balance',
         entries: [
           {
             walletId: opts.walletId,
@@ -456,7 +459,10 @@ export class TransactionsService {
       );
 
       if (payout.journalId) {
-        await this.transactionsDb.postJournal(payout.journalId);
+        // Balance was already deducted at requestWithdrawal time — skip wallet updates.
+        await this.transactionsDb.postJournal(payout.journalId, {
+          skipWalletUpdates: true,
+        });
       }
 
       return {
@@ -495,7 +501,10 @@ export class TransactionsService {
       );
 
       if (payout.journalId) {
-        await this.transactionsDb.failJournal(payout.journalId);
+        // Reverse the balance reservation made at requestWithdrawal time.
+        await this.transactionsDb.failJournal(payout.journalId, {
+          balanceField: 'balance',
+        });
       }
 
       return {
