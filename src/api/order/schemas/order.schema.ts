@@ -235,6 +235,21 @@ export class Orders {
   @Column({ type: 'timestamptz', nullable: true })
   escrowReleasedAt?: Date;
 
+  @Column({ type: 'timestamptz', nullable: true })
+  riderFundedAt?: Date;
+
+  @Column({
+    type: 'numeric',
+    precision: 18,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (v: number | null) => v,
+      from: (v: string | null) => (v === null ? null : Number.parseFloat(v)),
+    },
+  })
+  riderFundedAmount?: number;
+
   @Column({ type: 'jsonb', nullable: true })
   @Exclude()
   webhookPayload?: Record<string, any>;

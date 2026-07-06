@@ -31,6 +31,11 @@ import {
 import type Redis from 'ioredis';
 import { REDIS_CLIENT } from 'src/queues/queues.module';
 import { PayoutsQueueProducer } from './queues/payouts.queue.producer';
+import { NotificationService } from 'src/api/notification/notification.service';
+import { RiderDb } from 'src/api/rider/rider.db';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Orders } from 'src/api/order/schemas/order.schema';
 
 @Injectable()
 export class TransactionsService {
@@ -44,6 +49,10 @@ export class TransactionsService {
     private readonly utilService: UtilsService,
     private readonly payoutsQueueProducer: PayoutsQueueProducer,
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    private readonly notificationService: NotificationService,
+    private readonly riderDb: RiderDb,
+    @InjectRepository(Orders)
+    private readonly ordersModel: Repository<Orders>,
   ) {}
 
   private validateAmount(amount: number): void {
@@ -756,13 +765,46 @@ export class TransactionsService {
       throw new NotFoundException('Rider wallet not found');
     }
 
-    return this.businessToRiderPayout({
+    const result = await this.businessToRiderPayout({
       businessWalletId: businessWallet.id,
       riderWalletId: riderWallet.id,
       totalAmount: payload.amount,
       orderId: payload.orderId,
       metadata: { initiatedBy: auth.businessId },
     });
+
+    if (payload.orderId) {
+      this.ordersModel
+        .update(payload.orderId, {
+          riderFundedAt: new Date(),
+          riderFundedAmount: payload.amount,
+        })
+        .catch((err) =>
+          this.logger.warn(
+            `Failed to update riderFunded fields for orderId=${payload.orderId}`,
+            err,
+          ),
+        );
+    }
+
+    this.riderDb
+      .findRiderByRiderId(payload.riderId)
+      .then((rider) => {
+        if (rider?.authId) {
+          return this.notificationService.notifyRiderWalletCredited(
+            rider.authId,
+            payload.amount,
+          );
+        }
+      })
+      .catch((err) =>
+        this.logger.warn(
+          `Failed to send wallet credit notification to rider=${payload.riderId}`,
+          err,
+        ),
+      );
+
+    return result;
   }
 
   /**

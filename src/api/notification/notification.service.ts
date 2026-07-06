@@ -145,6 +145,31 @@ export class NotificationService {
     });
   }
 
+  async notifyRiderWalletCredited(
+    authId: string,
+    amount: number,
+  ): Promise<void> {
+    const formatted = new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+    }).format(amount);
+
+    await Promise.all([
+      this.sendToAuthId(authId, {
+        title: 'Wallet Credited',
+        body: `Your wallet has been credited with ${formatted}.`,
+        data: { type: 'WALLET_CREDITED', amount: String(amount) },
+      }),
+      this.notificationDb.createInAppNotification({
+        authId,
+        type: 'WALLET_CREDITED',
+        title: 'Wallet Credited',
+        body: `Your wallet has been credited with ${formatted}.`,
+        data: { amount: String(amount) },
+      }),
+    ]);
+  }
+
   async notifyBusinessNewOrder(
     authId: string,
     orderId: string,
