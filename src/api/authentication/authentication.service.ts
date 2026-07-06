@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -38,6 +39,7 @@ import { ReviewsDb } from 'src/api/reviews/reviews.db';
 
 @Injectable()
 export class AuthenticationService {
+  private readonly logger = new Logger(AuthenticationService.name);
   private static readonly ENVIRONMENT = process.env.NODE_ENV || 'development';
 
   constructor(
@@ -109,7 +111,7 @@ export class AuthenticationService {
     try {
       await this.emailService.sendMail(message);
     } catch (error) {
-      console.error('Failed to send email:', error);
+      this.logger.warn('Failed to send email', error);
     }
   }
 
@@ -380,7 +382,7 @@ export class AuthenticationService {
         otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
       });
     } catch (error) {
-      console.log(error);
+      this.logger.error('Registration failed', error);
       throw new BadRequestException('Registration failed');
     }
 
@@ -595,7 +597,7 @@ export class AuthenticationService {
       throw new UnauthorizedException('Invalid current password');
 
     const hashedPassword = await this.hashPassword(payload.newPassword);
-    await this.authDb.resetPasswordTransaction({
+    await this.authDb.updateAuthPasswordTransaction({
       authId: user.id,
       hashedPassword,
     });

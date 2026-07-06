@@ -75,7 +75,6 @@ export class WebhooksService {
     payload: INombaWebhookPayload,
     headers: Record<string, string>,
   ) {
-    console.log('Received Nomba webhook event:', payload);
     if (!this.nombaService.verifyWebhookSignature(payload, headers)) {
       this.logger.warn('Invalid Nomba webhook signature');
       throw new BadRequestException('Invalid signature');

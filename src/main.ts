@@ -1,6 +1,6 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor, Logger } from '@nestjs/common';
 import { HttpExceptionFilter } from './helpers/exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -20,10 +20,7 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   app.setGlobalPrefix('api/v1', { exclude: ['health'] });
-  app.useGlobalFilters(
-    new HttpExceptionFilter(),
-    // new WebSocketExceptionsFilter()
-  );
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
@@ -52,9 +49,8 @@ async function bootstrap() {
   }
 
   const PORT = process.env.PORT ?? 3000;
-  await app.listen(PORT, () => {
-    console.log(`The server is listening on http://localhost:${PORT}`);
-  });
+  await app.listen(PORT);
+  Logger.log(`Server listening on http://localhost:${PORT}`, 'Bootstrap');
 }
 
 bootstrap();

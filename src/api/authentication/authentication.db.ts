@@ -201,18 +201,4 @@ export class AuthenticationDb {
     });
   }
 
-  async resetPasswordTransaction(opts: {
-    authId: string;
-    hashedPassword: string;
-  }): Promise<void> {
-    const { authId, hashedPassword } = opts;
-
-    await this.authModel.manager.transaction(async (manager) => {
-      const authRepo = manager.getRepository(Auth);
-      await authRepo.update(
-        { id: authId as any },
-        { password: hashedPassword },
-      );
-    });
-  }
 }

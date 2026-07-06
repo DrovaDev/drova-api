@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -27,6 +28,8 @@ import { ReviewsDb } from 'src/api/reviews/reviews.db';
 
 @Injectable()
 export class RiderService {
+  private readonly logger = new Logger(RiderService.name);
+
   constructor(
     private readonly riderDb: RiderDb,
     private readonly authDb: AuthenticationDb,
@@ -60,8 +63,7 @@ export class RiderService {
   }
 
   private sendOtpSafe(phone: string, otp: string): void {
-    // OTP delivery not yet configured — log for dev visibility only
-    console.log(`[OTP] phone=${phone} otp=${otp}`);
+    this.logger.debug(`[OTP] phone=${phone} otp=${otp}`);
   }
 
   private async findRiderAuthByPhone(phone: string) {
