@@ -18,6 +18,7 @@ import { AuthenticationDataModule } from '../authentication/authentication-data.
 import { Wallet } from 'src/api/wallets/schemas/wallet.schema';
 import { ReviewsDb } from 'src/api/reviews/reviews.db';
 import { Review } from 'src/api/reviews/schemas/review.schema';
+import { NeuronService } from 'src/services/neuron.service';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { Review } from 'src/api/reviews/schemas/review.schema';
     Helpers,
     UtilsService,
     RiderLocationThrottlerGuard,
+    NeuronService,
     {
       provide: QUERY_RUNNER_FACTORY,
       useClass: QueryRunnerFactory,

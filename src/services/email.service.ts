@@ -8,8 +8,8 @@ import { EmailMessage } from '../interfaces/mail.interface';
 import axios, { AxiosInstance } from 'axios';
 import FormData from 'form-data';
 import { Resend, type CreateEmailOptions } from 'resend';
-import { access, readFile } from 'fs/promises';
-import * as path from 'path';
+import { access, readFile } from 'node:fs/promises';
+import * as path from 'node:path';
 
 @Injectable()
 export class EmailService {
@@ -58,10 +58,8 @@ export class EmailService {
 
   private getAppUrl(): string {
     return (
-      this.configService.get<string>('APP_WEB_URL') ||
-      this.configService.get<string>('FRONTEND_URL') ||
-      this.configService.get<string>('WEB_APP_URL') ||
-      'https://usedrova.app/'
+      this.configService.get<string>('FRONTEND_URL') || 
+      'https://drova-hackathon-mcun.vercel.app/'
     );
   }
 

@@ -29,6 +29,7 @@ import { OrderOfferQueueProcessor } from './queues/order-offer.queue.processor';
 import { EmailService } from 'src/services/email.service';
 import { OrderPricingService } from './providers/order-pricing.service';
 import { OrderPaymentService } from './providers/order-payment.service';
+import { NeuronService } from 'src/services/neuron.service';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { OrderPaymentService } from './providers/order-payment.service';
     EmailService,
     OrderPricingService,
     OrderPaymentService,
+    NeuronService,
   ],
   exports: [OrderService, OrderDb],
   controllers: [OrderController],

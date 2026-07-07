@@ -8,6 +8,7 @@ import { TransactionsService } from 'src/api/transactions/transactions.service';
 import { WalletDb } from 'src/api/wallets/wallet.db';
 import { PaymentEmailQueueProducer } from '../queues/payment-email.queue.producer';
 import { AuthenticationDb } from 'src/api/authentication/authentication.db';
+import { NeuronService } from 'src/services/neuron.service';
 
 @Injectable()
 export class OrderPaymentService {
@@ -20,7 +21,16 @@ export class OrderPaymentService {
     private readonly transactionsService: TransactionsService,
     private readonly paymentEmailQueue: PaymentEmailQueueProducer,
     private readonly authDb: AuthenticationDb,
+    private readonly neuronService: NeuronService,
   ) {}
+
+  private sendWhatsAppSafe(phone: string, message: string): void {
+    this.neuronService
+      .sendWhatsAppMessage(phone, message)
+      .catch((err) =>
+        this.logger.error(`Failed to send WhatsApp to ${phone}`, err),
+      );
+  }
 
   async processPaymentSuccess(
     paymentReference: string,
@@ -132,6 +142,13 @@ export class OrderPaymentService {
         amount: Number(order.totalAmount),
         deliveryPin,
       });
+
+      if (order.parties?.guestContactNumber) {
+        this.sendWhatsAppSafe(
+          order.parties.guestContactNumber,
+          `Hi ${order.parties.guestFullName || 'there'}, payment confirmed for order *${order.referenceCode}*.\n\nYour delivery PIN is: *${deliveryPin}*\n\nShare this code with the rider at the point of delivery to confirm receipt.`,
+        );
+      }
 
       return successResponse('Payment processed successfully', {
         orderId: order.id,

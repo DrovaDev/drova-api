@@ -13,6 +13,7 @@ import { NotificationModule } from 'src/api/notification/notification.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ReviewsDb } from 'src/api/reviews/reviews.db';
 import { Review } from 'src/api/reviews/schemas/review.schema';
+import { NeuronService } from 'src/services/neuron.service';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { Review } from 'src/api/reviews/schemas/review.schema';
       },
     }),
   ],
-  providers: [AuthenticationService, ReviewsDb, Helpers, EmailService],
+  providers: [AuthenticationService, ReviewsDb, Helpers, EmailService, NeuronService],
   controllers: [AuthenticationController],
   exports: [AuthenticationDataModule],
 })

@@ -25,6 +25,7 @@ import { PaginationQuery } from 'src/interfaces/pagination.interface';
 import { RiderDb } from './rider.db';
 import { AuthenticationDb } from 'src/api/authentication/authentication.db';
 import { ReviewsDb } from 'src/api/reviews/reviews.db';
+import { NeuronService } from 'src/services/neuron.service';
 
 @Injectable()
 export class RiderService {
@@ -36,6 +37,7 @@ export class RiderService {
     private readonly reviewsDb: ReviewsDb,
     private readonly helpers: Helpers,
     private readonly utilService: UtilsService,
+    private readonly neuronService: NeuronService,
     @InjectRepository(Business)
     private readonly businessModel: Repository<Business>,
   ) {}
@@ -63,7 +65,14 @@ export class RiderService {
   }
 
   private sendOtpSafe(phone: string, otp: string): void {
-    this.logger.debug(`[OTP] phone=${phone} otp=${otp}`);
+    this.neuronService
+      .sendWhatsAppMessage(
+        phone,
+        `Your verification code is: ${otp}. It expires in 10 minutes.`,
+      )
+      .catch((err) =>
+        this.logger.error(`Failed to send OTP via WhatsApp to ${phone}`, err),
+      );
   }
 
   private async findRiderAuthByPhone(phone: string) {
@@ -113,10 +122,7 @@ export class RiderService {
       throw new BadRequestException('OTP has already been used');
     if (otpRecord.expiresAt < new Date())
       throw new BadRequestException('OTP has expired');
-    const isDev = process.env.NODE_ENV === 'development';
-    const matches =
-      isDev && otp === '000000' ? true : otpRecord.otpCode === otp;
-    if (!matches) throw new BadRequestException('Invalid OTP');
+    if (otpRecord.otpCode !== otp) throw new BadRequestException('Invalid OTP');
   }
 
   private buildRiderData(

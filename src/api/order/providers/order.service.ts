@@ -45,6 +45,7 @@ import { OrderPaymentService } from './order-payment.service';
 import { Orders } from '../schemas/order.schema';
 import { EmailService } from 'src/services/email.service';
 import { TransactionsDb } from 'src/api/transactions/transactions.db';
+import { NeuronService } from 'src/services/neuron.service';
 
 const BUSINESS_ORDER_SORT_FIELDS = new Set([
   'createdAt',
@@ -86,7 +87,29 @@ export class OrderService {
     private readonly orderPaymentService: OrderPaymentService,
     private readonly emailService: EmailService,
     private readonly transactionsDb: TransactionsDb,
+    private readonly neuronService: NeuronService,
   ) {}
+
+  private sendWhatsAppSafe(phone: string, message: string): void {
+    this.neuronService
+      .sendWhatsAppMessage(phone, message)
+      .catch((err) =>
+        this.logger.error(`Failed to send WhatsApp to ${phone}`, err),
+      );
+  }
+
+  private buildStatusMessage(status: OrderStatus, referenceCode: string): string {
+    const map: Partial<Record<OrderStatus, string>> = {
+      [OrderStatus.ASSIGNED]: `Your order *${referenceCode}* has been assigned to a rider and is being prepared for pickup.`,
+      [OrderStatus.EN_ROUTE_PICKUP]: `Your rider is on the way to pick up your package for order *${referenceCode}*.`,
+      [OrderStatus.PICKED_UP]: `Your package for order *${referenceCode}* has been picked up by the rider.`,
+      [OrderStatus.IN_TRANSIT]: `Your order *${referenceCode}* is now in transit to the delivery location.`,
+      [OrderStatus.ARRIVED_AT_DELIVERY]: `Your rider has arrived at the delivery location for order *${referenceCode}*.`,
+      [OrderStatus.COMPLETED]: `Your order *${referenceCode}* has been delivered successfully. Thank you!`,
+      [OrderStatus.CANCELLED]: `Your order *${referenceCode}* has been cancelled.`,
+    };
+    return map[status] ?? `Your order *${referenceCode}* status has been updated to: ${status}.`;
+  }
 
   /**
    * Submit a quotation request. No fee is calculated — the business will review
@@ -175,7 +198,7 @@ export class OrderService {
         },
       });
 
-      // Fire-and-forget: notify the business of the new order via in-app + email
+      // Fire-and-forget: notify the business of the new order via in-app + email + WhatsApp
       this.authDb
         .findAuthById(business.authId)
         .then((auth) => {
@@ -195,6 +218,12 @@ export class OrderService {
                 customerName: payload.senderDetails.guestFullName,
                 orderId: savedOrder.id,
               }),
+            );
+          }
+          if (business.contactNumber) {
+            this.sendWhatsAppSafe(
+              business.contactNumber,
+              `New quote request received! 📦\n\nOrder *${referenceCode}* from ${payload.senderDetails.guestFullName}. Log in to your dashboard to review and send an invoice.`,
             );
           }
           return Promise.all(notifications);
@@ -450,6 +479,13 @@ export class OrderService {
       paymentMethod: payload.paymentMethod,
     });
 
+    if (payload.senderDetails.guestContactNumber) {
+      this.sendWhatsAppSafe(
+        payload.senderDetails.guestContactNumber,
+        `Hi ${payload.senderDetails.guestFullName || 'there'}, your order *${referenceCode}* has been confirmed.\n\nYour delivery PIN is: *${deliveryPin}*\n\nShare this code with the rider at the point of delivery to confirm receipt.`,
+      );
+    }
+
     return successResponse(
       'Order created and marked as paid. You can now assign a rider.',
       confirmedOrder,
@@ -697,6 +733,13 @@ export class OrderService {
       .findOrderById({ orderId })
       .then((order) => {
         if (!order?.parties) return;
+        const msg = this.buildStatusMessage(OrderStatus.ASSIGNED, order.referenceCode);
+        if (order.parties.guestContactNumber) {
+          this.sendWhatsAppSafe(order.parties.guestContactNumber, msg);
+        }
+        if (order.parties.recipientContactNumber) {
+          this.sendWhatsAppSafe(order.parties.recipientContactNumber, msg);
+        }
         return this.paymentEmailQueue.enqueueOrderStatusEmail({
           status: OrderStatus.ASSIGNED,
           referenceCode: order.referenceCode,
@@ -708,7 +751,7 @@ export class OrderService {
       })
       .catch((err) =>
         this.logger.warn(
-          `Failed to queue order-assigned emails for order ${orderId}`,
+          `Failed to queue order-assigned notifications for order ${orderId}`,
           err,
         ),
       );
@@ -1050,11 +1093,18 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
 
-    // Fire-and-forget: email sender/recipient based on new status
+    // Fire-and-forget: notify sender/recipient via email + WhatsApp based on new status
     this.orderDb
       .findOrderById({ orderId })
       .then((order) => {
         if (!order?.parties) return;
+        const msg = this.buildStatusMessage(status, order.referenceCode);
+        if (order.parties.guestContactNumber) {
+          this.sendWhatsAppSafe(order.parties.guestContactNumber, msg);
+        }
+        if (order.parties.recipientContactNumber) {
+          this.sendWhatsAppSafe(order.parties.recipientContactNumber, msg);
+        }
         return this.paymentEmailQueue.enqueueOrderStatusEmail({
           status,
           referenceCode: order.referenceCode,
@@ -1066,7 +1116,7 @@ export class OrderService {
       })
       .catch((err) =>
         this.logger.warn(
-          `Failed to queue status emails for order ${orderId} (${status})`,
+          `Failed to queue status notifications for order ${orderId} (${status})`,
           err,
         ),
       );
