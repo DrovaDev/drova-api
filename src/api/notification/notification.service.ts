@@ -225,7 +225,7 @@ export class NotificationService {
     await this.notificationDb.createInAppNotification({
       authId,
       type: InAppNotificationType.NEW_ORDER,
-      title: 'New Delivery Request',
+      title: 'New Quote Request',
       body: `Order ${referenceCode} has been placed. Review and send an invoice to get started.`,
       data: { orderId, referenceCode },
     });

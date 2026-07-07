@@ -115,7 +115,6 @@ export class OrderService {
 
       const businessId = business.id;
 
-      this.assertBusinessIsOpen(business.operatingHours);
 
       const referenceCode = this.helpers.generateOrderReference();
 

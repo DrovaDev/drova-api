@@ -1,27 +1,23 @@
-import { Controller } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
-  ApiParam,
   ApiBody,
   ApiOperation,
-  ApiResponse,
 } from '@nestjs/swagger';
 import {
   Body,
   ForbiddenException,
   Get,
-  Param,
   Post,
   UseGuards,
+  Controller
 } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
-import { Auth, Roles } from 'src/interfaces/customs.decorator';
+import { Auth } from 'src/interfaces/customs.decorator';
 import type { ITokenPayload } from 'src/interfaces/token.interface';
 import { AuthGuard } from './guards/authentication.guard';
 import {
   UserRegistrationDTO,
-  ValidatUserPasswordDTO,
   EmailVerificationDTO,
   ForgotPasswordDTO,
   ChangePasswordDTO,
