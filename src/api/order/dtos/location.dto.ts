@@ -1,27 +1,19 @@
 import {
   ApiProperty,
   ApiPropertyOptional,
-  PartialType,
-  OmitType,
 } from '@nestjs/swagger';
 import {
   ArrayNotEmpty,
   IsArray,
   IsEnum,
-  IsInt,
-  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
-  Length,
-  Matches,
-  Max,
-  Min,
-  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { NigerianState } from 'src/constants';
+import { normalizePhoneNumber } from 'src/helpers/normalize-phone-number';
 
 export class PickupDetailsDTO {
   @IsNotEmpty({ message: 'pickup address is required' })
@@ -73,10 +65,8 @@ export class PickupDetailsDTO {
 
   @IsOptional()
   @IsString({ message: 'contact person phone number must be a string' })
-  @Matches(/^\+?[1-9]\d{1,14}$/, {
-    message: 'pickup contact person phone number must be a valid E.164 format',
-  })
-  @ApiPropertyOptional({ example: '+1234567890' })
+  @Transform(({ value }) => (value ? normalizePhoneNumber(String(value).trim()) : value))
+  @ApiPropertyOptional({ example: '08012345678' })
   pickupContactPersonPhoneNumber?: string;
 }
 
