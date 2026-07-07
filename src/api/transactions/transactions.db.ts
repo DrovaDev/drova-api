@@ -505,6 +505,13 @@ export class TransactionsDb {
     await this.payoutModel.update(payoutId, update);
   }
 
+  async updatePayoutWebhook(
+    payoutId: string,
+    webhookPayload: Record<string, any>,
+  ): Promise<void> {
+    await this.payoutModel.update(payoutId,  webhookPayload);
+  }
+
   async findPayoutById(payoutId: string): Promise<Payout | null> {
     return this.payoutModel.findOne({
       where: { id: payoutId },

@@ -624,11 +624,12 @@ export class EmailService {
     businessName: string;
     referenceCode: string;
     customerName: string;
+    orderId: string;
   }): Promise<void> {
-    const subject = `New Order Received — ${opts.referenceCode}`;
-    const preheader = `${opts.customerName} has placed a new delivery request. Review and send an invoice to get started.`;
+    const subject = `New Quote Request — ${opts.referenceCode}`;
+    const preheader = `${opts.customerName} has placed a new quote request. Review and send an invoice to get started.`;
     const year = String(new Date().getFullYear());
-    const dashboardUrl = `${this.getAppUrl()}/dashboard/orders`;
+    const dashboardUrl = `${this.getAppUrl()}/dashboard/orders/${opts.orderId}`;
 
     const cta_section = `
       <tr>
@@ -640,7 +641,7 @@ export class EmailService {
 
     const body_html = [
       `<div style="font-size: 14px; color:#16352A;">Hi ${this.escapeHtml(opts.businessName)},</div>`,
-      `<div style="margin-top: 10px; font-size: 14px; color:#16352A;">You have received a new delivery request from <strong>${this.escapeHtml(opts.customerName)}</strong>.</div>`,
+      `<div style="margin-top: 10px; font-size: 14px; color:#16352A;">You have received a new quote request from <strong>${this.escapeHtml(opts.customerName)}</strong>.</div>`,
       `<div style="margin-top: 10px; font-size: 14px; color:#16352A;">Order Reference: <strong>${this.escapeHtml(opts.referenceCode)}</strong></div>`,
       `<div style="margin-top: 10px; font-size: 14px; color:#16352A;">Log in to your dashboard to review the order details and send an invoice to the customer.</div>`,
     ].join('');
@@ -653,7 +654,7 @@ export class EmailService {
     const html = this.renderPlaceholders(template, {
       subject: this.escapeHtml(subject),
       preheader: this.escapeHtml(preheader),
-      heading: 'New Delivery Request',
+      heading: 'New Quote Request',
       body_html,
       cta_section,
       footer_note,

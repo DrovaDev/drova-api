@@ -193,6 +193,7 @@ export class OrderService {
                 businessName: business.businessName,
                 referenceCode,
                 customerName: payload.senderDetails.guestFullName,
+                orderId: savedOrder.id,
               }),
             );
           }

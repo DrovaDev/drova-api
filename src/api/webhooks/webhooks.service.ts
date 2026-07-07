@@ -166,6 +166,7 @@ export class WebhooksService {
       await this.transactionsService.processPayoutWebhookSuccess(
         merchantTxRef,
         providerReference,
+        payload,
       );
     } else {
       const isRefund = payload.event_type === 'payout_refund';

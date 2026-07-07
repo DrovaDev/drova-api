@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Business } from 'src/api/business/schemas/business.schema';
 import { Rider } from 'src/api/rider/schemas/rider.schema';
 import { Wallet } from './schemas/wallet.schema';
@@ -41,6 +41,24 @@ export class WalletDb {
         status: WalletStatus.READY,
       },
     });
+  }
+
+  async deductFromBalance(walletId: string, amount: number): Promise<void> {
+    await this.walletModel
+      .createQueryBuilder()
+      .update(Wallet)
+      .set({ balance: () => `"balance" - ${amount}` })
+      .where('id = :walletId', { walletId })
+      .execute();
+  }
+
+  async addToBalance(walletId: string, amount: number): Promise<void> {
+    await this.walletModel
+      .createQueryBuilder()
+      .update(Wallet)
+      .set({ balance: () => `"balance" + ${amount}` })
+      .where('id = :walletId', { walletId })
+      .execute();
   }
 
   findWalletWithOwnerById(walletId: string): Promise<{

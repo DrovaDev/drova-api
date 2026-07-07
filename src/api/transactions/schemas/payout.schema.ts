@@ -83,6 +83,21 @@ export class Payout {
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, any>;
 
+  @Column({
+    type: 'numeric',
+    precision: 18,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number | undefined) => value,
+      from: (value: string | null) => (value !== null ? Number.parseFloat(value) : null),
+    },
+  })
+  fee?: number;
+
+  @Column({ type: 'jsonb', nullable: true })
+  webhookPayload?: Record<string, any>;
+
   @ManyToOne(() => Wallet, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'walletId' })
   wallet: Wallet;

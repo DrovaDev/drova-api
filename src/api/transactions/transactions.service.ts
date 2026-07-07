@@ -399,8 +399,11 @@ export class TransactionsService {
     if (!wallet) {
       throw new NotFoundException('Wallet not found');
     }
-    if (wallet.balance < opts.amount) {
-      throw new BadRequestException('Insufficient wallet balance');
+    const TRANSFER_FEE = 20;
+    if (wallet.balance < opts.amount + TRANSFER_FEE) {
+      throw new BadRequestException(
+        `Insufficient balance. Withdrawal requires ₦${opts.amount} + ₦${TRANSFER_FEE} transfer fee.`,
+      );
     }
 
     // Prevent identical transfers (same wallet → same account + amount) within 10 seconds
@@ -462,8 +465,13 @@ export class TransactionsService {
         destination: opts.destination,
         status: PayoutStatus.REQUESTED,
         idempotencyKey,
+        fee: TRANSFER_FEE,
         metadata: opts.metadata,
       });
+
+      // Deduct the fixed transfer fee immediately — it is certain at this point
+      // and will be confirmed by the webhook payload when Nomba responds.
+      await this.walletDb.deductFromBalance(opts.walletId, TRANSFER_FEE);
 
       await this.payoutsQueueProducer.enqueueProcessPayout(payout.id);
 
@@ -559,6 +567,10 @@ export class TransactionsService {
         });
       }
 
+      // Refund the transfer fee that was pre-deducted at request time.
+      const fee = payout.fee ?? 20;
+      await this.walletDb.addToBalance(payout.walletId, fee);
+
       return {
         status: 'success',
         statusCode: 200,
@@ -574,13 +586,14 @@ export class TransactionsService {
   }
 
   /**
-   * Called by the payout_success webhook — looks up the payout by the
-   * merchantTxRef we passed to Nomba (which equals the idempotencyKey) and
-   * posts the journal to finalise the withdrawal.
+   * Called by the payout_success webhook — posts the journal and stores
+   * the actual fee + full payload on the payout record for reconciliation.
+   * The fee itself was already deducted from the wallet at request time.
    */
   async processPayoutWebhookSuccess(
     merchantTxRef: string,
     providerReference?: string,
+    webhookPayload?: Record<string, any>,
   ): Promise<void> {
     const payout =
       await this.transactionsDb.findPayoutByIdempotencyKey(merchantTxRef);
@@ -594,6 +607,18 @@ export class TransactionsService {
       return;
     }
     await this.confirmWithdrawal(payout.id, providerReference);
+
+    try {
+      await this.transactionsDb.updatePayoutWebhook(
+        payout.id,
+        webhookPayload ?? {},
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to store webhook payload for payoutId=${payout.id}`,
+        err,
+      );
+    }
   }
 
   /**
