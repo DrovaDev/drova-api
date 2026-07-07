@@ -448,11 +448,13 @@ export class BusinessService {
       }),
     ]);
 
+    const { bvn: _bvn, taxIdentificationNumber: _tin, ...publicBusiness } = business as any;
+
     return {
       status: 'success',
       statusCode: 200,
       message: 'Storefront fetched successfully',
-      data: { business, averageRating, reviews },
+      data: { business: publicBusiness, averageRating, reviews },
       meta: {
         count,
         totalPages: Math.ceil(count / limit),
