@@ -29,18 +29,7 @@ export class BusinessDb {
   }
 
   findBySlug(slug: string): Promise<Business | null> {
-    return this.businessModel.findOne({
-      where: { slug },
-      select: [
-        'id',
-        'businessName',
-        'businessState',
-        'location',
-        'deliveryScope',
-        'authId',
-        'operatingHours',
-      ],
-    });
+    return this.businessModel.findOne({ where: { slug } });
   }
 
   findBusinessByAuthId(authId: string): Promise<Business | null> {
