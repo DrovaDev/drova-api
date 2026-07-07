@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsString } from 'class-validator';
+import { normalizePhoneNumber } from 'src/helpers/normalize-phone-number';
 
 export class SenderDetailDTO {
   @IsNotEmpty({ message: 'guestFullName is required' })
@@ -9,9 +11,10 @@ export class SenderDetailDTO {
 
   @IsNotEmpty({ message: 'guestContactNumber is required' })
   @IsString({ message: 'guestContactNumber must be a string' })
+  @Transform(({ value }) => (value ? normalizePhoneNumber(String(value).trim()) : value))
   @ApiProperty({
-    description: 'Contact number of the sender',
-    example: '+2348012345678',
+    description: 'Contact number of the sender (local or international format)',
+    example: '08012345678',
   })
   guestContactNumber: string;
 

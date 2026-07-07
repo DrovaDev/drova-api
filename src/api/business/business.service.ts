@@ -13,6 +13,7 @@ import {
   SubscriptionPlan,
   BusinessDayOfWeek,
   BusinessOperatingStatus,
+  ReviewTargetType
 } from 'src/constants';
 import {
   BusinessProfileSetupDTO,
@@ -23,7 +24,6 @@ import { BusinessDb } from './business.db';
 import { AuthenticationDb } from '../authentication/authentication.db';
 import { JwtService } from '@nestjs/jwt';
 import { ReviewsDb } from '../reviews/reviews.db';
-import { ReviewTargetType } from 'src/constants';
 import { ReviewQueryDTO } from '../reviews/dtos/review.dto';
 
 @Injectable()
