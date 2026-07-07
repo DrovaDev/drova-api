@@ -9,17 +9,18 @@ import { BusinessValidationService } from 'src/services/business-validation.serv
 import { BusinessController } from './business.controller';
 import { BusinessDb } from './business.db';
 import { AuthenticationDataModule } from '../authentication/authentication-data.module';
-import { ReviewsModule } from '../reviews/reviews.module';
+import { ReviewsDb } from '../reviews/reviews.db';
+import { Review } from '../reviews/schemas/review.schema';
 
 @Module({
   imports: [
     AuthenticationDataModule,
-    ReviewsModule,
-    TypeOrmModule.forFeature([Business, Auth]),
+    TypeOrmModule.forFeature([Business, Auth, Review]),
   ],
   providers: [
     BusinessService,
     BusinessDb,
+    ReviewsDb,
     BusinessValidationService,
     {
       provide: QUERY_RUNNER_FACTORY,

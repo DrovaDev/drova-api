@@ -539,18 +539,23 @@ export class AuthenticationService {
 
     if (userType === UserType.BUSINESS) {
       const business = await this.businessDb.findBusinessByAuthId(authId);
-      profile = business
-        ? {
-            id: business.id,
-            businessName: business.businessName,
-            slug: business.slug,
-            businessAddress: business.businessAddress,
-            businessState: business.businessState,
-            contactNumber: business.contactNumber,
-            businessLogo: business.businessLogo,
-            isVerified: business.isVerified,
-          }
-        : null;
+      if (business) {
+        const averageRating = await this.reviewsDb.getAverageRating(
+          business.id,
+          ReviewTargetType.BUSINESS,
+        );
+        profile = {
+          id: business.id,
+          businessName: business.businessName,
+          slug: business.slug,
+          businessAddress: business.businessAddress,
+          businessState: business.businessState,
+          contactNumber: business.contactNumber,
+          businessLogo: business.businessLogo,
+          isVerified: business.isVerified,
+          averageRating,
+        };
+      }
     } else if (userType === UserType.RIDER) {
       const rider = await this.riderDb.findRiderByAuthId(authId);
       if (rider) {

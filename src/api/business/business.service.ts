@@ -22,7 +22,7 @@ import {
 import { BusinessDb } from './business.db';
 import { AuthenticationDb } from '../authentication/authentication.db';
 import { JwtService } from '@nestjs/jwt';
-import { ReviewsService } from '../reviews/reviews.service';
+import { ReviewsDb } from '../reviews/reviews.db';
 import { ReviewTargetType } from 'src/constants';
 import { ReviewQueryDTO } from '../reviews/dtos/review.dto';
 
@@ -33,7 +33,7 @@ export class BusinessService {
     private readonly authDb: AuthenticationDb,
     private readonly businessValidationService: BusinessValidationService,
     private readonly jwtService: JwtService,
-    private readonly reviewsService: ReviewsService,
+    private readonly reviewsDb: ReviewsDb,
   ) {}
 
   private normalizeOperatingHours(input: any) {
@@ -68,11 +68,16 @@ export class BusinessService {
     const business = await this.businessDb.findBusinessByAuthId(authId);
     if (!business) throw new NotFoundException('Business profile not found');
 
+    const averageRating = await this.reviewsDb.getAverageRating(
+      business.id,
+      ReviewTargetType.BUSINESS,
+    );
+
     return {
       status: 'success',
       statusCode: 200,
       message: 'Business profile fetched successfully',
-      data: business,
+      data: { ...business, averageRating },
     };
   }
 
@@ -429,24 +434,31 @@ export class BusinessService {
       throw new NotFoundException('Business not found');
     }
 
-    const [averageRating, reviewsResponse] = await Promise.all([
-      this.reviewsService.getAverageRating(
-        business.id,
-        ReviewTargetType.BUSINESS,
-      ),
-      this.reviewsService.getBusinessReviews(business.id, query),
+    const sortOrder = (query.sortOrder?.toUpperCase() as 'ASC' | 'DESC') || 'DESC';
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const offset = (page - 1) * limit;
+
+    const [averageRating, { reviews, count }] = await Promise.all([
+      this.reviewsDb.getAverageRating(business.id, ReviewTargetType.BUSINESS),
+      this.reviewsDb.findReviewsByTarget(business.id, ReviewTargetType.BUSINESS, {
+        offset,
+        limit,
+        sortOrder,
+      }),
     ]);
 
     return {
       status: 'success',
       statusCode: 200,
       message: 'Storefront fetched successfully',
-      data: {
-        business,
-        averageRating,
-        reviews: reviewsResponse.data,
+      data: { business, averageRating, reviews },
+      meta: {
+        count,
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        limit,
       },
-      meta: (reviewsResponse as any).meta,
     };
   }
 }
