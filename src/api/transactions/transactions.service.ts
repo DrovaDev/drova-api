@@ -458,9 +458,30 @@ export class TransactionsService {
         ],
       });
 
+      const feeReference = `JRNL-FEE-${this.helpers.generateTxReference()}`;
+      const feeJournal = await this.transactionsDb.createJournal({
+        reference: feeReference,
+        type: JournalType.TRANSFER_FEE,
+        balanceField: 'balance',
+        metadata: { relatedReference: reference },
+        entries: [
+          {
+            walletId: opts.walletId,
+            direction: LedgerEntryDirection.DEBIT,
+            amount: TRANSFER_FEE,
+          },
+          {
+            walletId: clearingWallet.id,
+            direction: LedgerEntryDirection.CREDIT,
+            amount: TRANSFER_FEE,
+          },
+        ],
+      });
+
       const payout = await this.transactionsDb.createPayout({
         walletId: opts.walletId,
         journalId: journal.id,
+        feeJournalId: feeJournal.id,
         amount: opts.amount,
         destination: opts.destination,
         status: PayoutStatus.REQUESTED,
@@ -468,10 +489,6 @@ export class TransactionsService {
         fee: TRANSFER_FEE,
         metadata: opts.metadata,
       });
-
-      // Deduct the fixed transfer fee immediately — it is certain at this point
-      // and will be confirmed by the webhook payload when Nomba responds.
-      await this.walletDb.deductFromBalance(opts.walletId, TRANSFER_FEE);
 
       await this.payoutsQueueProducer.enqueueProcessPayout(payout.id);
 
@@ -526,6 +543,12 @@ export class TransactionsService {
         });
       }
 
+      if (payout.feeJournalId) {
+        await this.transactionsDb.postJournal(payout.feeJournalId, {
+          skipWalletUpdates: true,
+        });
+      }
+
       return {
         status: 'success',
         statusCode: 200,
@@ -567,9 +590,11 @@ export class TransactionsService {
         });
       }
 
-      // Refund the transfer fee that was pre-deducted at request time.
-      const fee = payout.fee ?? 20;
-      await this.walletDb.addToBalance(payout.walletId, fee);
+      if (payout.feeJournalId) {
+        await this.transactionsDb.failJournal(payout.feeJournalId, {
+          balanceField: 'balance',
+        });
+      }
 
       return {
         status: 'success',

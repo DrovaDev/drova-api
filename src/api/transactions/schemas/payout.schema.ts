@@ -26,6 +26,9 @@ export class Payout {
   @Column({ type: 'uuid', nullable: true })
   journalId?: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  feeJournalId?: string;
+
   @Column({
     type: 'numeric',
     precision: 18,

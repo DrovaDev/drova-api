@@ -393,6 +393,7 @@ export enum JournalType {
   ESCROW_HOLD = 'escrow_hold',
   ESCROW_RELEASE = 'escrow_release',
   ESCROW_REFUND = 'escrow_refund',
+  TRANSFER_FEE = 'transfer_fee',
   REVERSAL = 'reversal',
   ADJUSTMENT = 'adjustment',
 }
