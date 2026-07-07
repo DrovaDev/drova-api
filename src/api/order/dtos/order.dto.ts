@@ -11,9 +11,12 @@ import {
   IsString,
   Length,
   Min,
-  Max,
   IsNumber,
+  Validate,
   ValidateNested,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PickupDetailsDTO, DeliveryDetailsDTO } from './location.dto';
@@ -27,6 +30,55 @@ import {
   PaymentStatus,
 } from 'src/constants';
 import { PaginationQueryDto } from 'src/helpers/global.dto';
+
+@ValidatorConstraint({ name: 'senderPhoneDiffersFromRecipient', async: false })
+class SenderPhoneDiffersConstraint implements ValidatorConstraintInterface {
+  validate(_: unknown, { object }: ValidationArguments): boolean {
+    const { senderDetails, recipientDetails } = object as BaseOrderDTO;
+    if (!senderDetails?.guestContactNumber || !recipientDetails?.recipientContactNumber) return true;
+    return senderDetails.guestContactNumber !== recipientDetails.recipientContactNumber;
+  }
+  defaultMessage(): string {
+    return 'Sender and recipient contact numbers must be different';
+  }
+}
+
+@ValidatorConstraint({ name: 'senderEmailDiffersFromRecipient', async: false })
+class SenderEmailDiffersConstraint implements ValidatorConstraintInterface {
+  validate(_: unknown, { object }: ValidationArguments): boolean {
+    const { senderDetails, recipientDetails } = object as BaseOrderDTO;
+    if (!senderDetails?.guestEmail || !recipientDetails?.recipientEmail) return true;
+    return senderDetails.guestEmail.toLowerCase() !== recipientDetails.recipientEmail.toLowerCase();
+  }
+  defaultMessage(): string {
+    return 'Sender and recipient email addresses must be different';
+  }
+}
+
+@ValidatorConstraint({ name: 'pickupDiffersFromDelivery', async: false })
+class PickupDiffersFromDeliveryConstraint implements ValidatorConstraintInterface {
+  validate(_: unknown, { object }: ValidationArguments): boolean {
+    const { pickupDetails, deliveryDetails } = object as BaseOrderDTO;
+    if (!pickupDetails || !deliveryDetails) return true;
+    if (
+      pickupDetails.pickupAddress?.trim().toLowerCase() ===
+        deliveryDetails.deliveryAddress?.trim().toLowerCase()
+    ) return false;
+    if (
+      pickupDetails.pickupCoordinates?.[0] === deliveryDetails.deliveryCoordinates?.[0] &&
+      pickupDetails.pickupCoordinates?.[1] === deliveryDetails.deliveryCoordinates?.[1]
+    ) return false;
+    return true;
+  }
+  defaultMessage({ object }: ValidationArguments): string {
+    const { pickupDetails, deliveryDetails } = object as BaseOrderDTO;
+    if (
+      pickupDetails?.pickupAddress?.trim().toLowerCase() ===
+      deliveryDetails?.deliveryAddress?.trim().toLowerCase()
+    ) return 'Pickup and delivery addresses must be different';
+    return 'Pickup and delivery locations (coordinates) must be different';
+  }
+}
 
 export class BaseOrderDTO {
   @IsEnum(PickupMethod, {
@@ -67,6 +119,8 @@ export class BaseOrderDTO {
   })
   customerNote?: string;
 
+  @Validate(SenderPhoneDiffersConstraint)
+  @Validate(SenderEmailDiffersConstraint)
   @ValidateNested()
   @Type(() => SenderDetailDTO)
   @ApiProperty({
@@ -83,6 +137,7 @@ export class BaseOrderDTO {
   })
   recipientDetails: RecipientDetailDTO;
 
+  @Validate(PickupDiffersFromDeliveryConstraint)
   @ValidateNested()
   @Type(() => PickupDetailsDTO)
   @ApiProperty({
