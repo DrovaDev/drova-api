@@ -70,6 +70,41 @@ Built for the **Nomba Hackathon 2026**.
 npm install
 ```
 
+### Environment Variables
+
+Copy `.dev.env` to `.env` and configure the following:
+
+| Variable | Description |
+|----------|-------------|
+| `NODE_ENV` | Environment (`development` / `production`) |
+| `ENABLE_SWAGGER` | Set to `true` to expose Swagger UI |
+| `DB_USERNAME` | PostgreSQL username |
+| `DB_PASSWORD` | PostgreSQL password |
+| `DB_HOST` | PostgreSQL host |
+| `DB_NAME` | PostgreSQL database name |
+| `JWT_SECRET` | Secret for signing access tokens |
+| `JWT_EXPIRES_IN` | Access token TTL (e.g. `15m`) |
+| `BUSINESS_VALIDATION_API_KEY` | API key for business validation service |
+| `BUSINESS_VALIDATION_API_BASE_URL` | Base URL for business validation service |
+| `RESEND_API_KEY` | Resend API key for email delivery |
+| `ALGORITHM` | Encryption algorithm for sensitive data |
+| `SECRET_KEY` | Encryption secret key |
+| `NOMBA_ACCOUNT_ID` | Nomba parent account ID |
+| `NOMBA_SUB_ACCOUNT_ID` | Nomba sub-account ID (used for transfers and balance) |
+| `NOMBA_CLIENT_ID` | Nomba OAuth client ID |
+| `NOMBA_CLIENT_SECRET` | Nomba OAuth client secret |
+| `NOMBA_BASE_URL` | `https://api.nomba.com` (prod) or `https://sandbox.nomba.com` |
+| `NOMBA_WEBHOOK_SIGNATURE_KEY` | Key for verifying Nomba webhook signatures |
+| `PLATFORM_COMMISSION_RATE` | Platform commission rate (e.g. `0.05` for 5%) |
+| `PLATFORM_COMMISSION_CAP` | Maximum platform commission in naira |
+| `REDIS_URL` | Redis connection URL (for BullMQ queues) |
+| `RENDER_EXTERNAL_URL` | Public URL of the deployed API (used for webhooks) |
+| `MQTT_HOST` | MQTT broker host (for real-time events) |
+| `MQTT_PORT` | MQTT broker port |
+| `MQTT_USERNAME` | MQTT broker username |
+| `MQTT_PASSWORD` | MQTT broker password |
+| `NEURON_API_KEY` | Neuron.ng API key for WhatsApp messaging |
+| `FRONTEND_URL` | Base URL of the frontend app (used in email/WhatsApp links) |
 
 ### Run the Application
 
