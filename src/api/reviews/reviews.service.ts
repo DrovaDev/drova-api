@@ -30,6 +30,13 @@ export class ReviewsService {
     return this.submitReviewForGuest(dto, ReviewTargetType.RIDER);
   }
 
+  async getAverageRating(
+    targetId: string,
+    targetType: ReviewTargetType,
+  ): Promise<number> {
+    return this.reviewsDb.getAverageRating(targetId, targetType);
+  }
+
   async getBusinessReviews(
     businessId: string,
     query: ReviewQueryDTO,

@@ -1,4 +1,4 @@
-import { Controller, Body, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Body, Get, Post, UseGuards, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { Auth, Roles } from 'src/interfaces/customs.decorator';
 import { AuthGuard } from '../authentication/guards/authentication.guard';
@@ -11,6 +11,7 @@ import {
   EditBusinessProfileDTO,
   ValidateBusinessTinDTO,
 } from './dtos/business.dto';
+import { ReviewQueryDTO } from '../reviews/dtos/review.dto';
 
 @Controller('business')
 @ApiTags('business')
@@ -78,5 +79,16 @@ export class BusinessController {
   @ApiOperation({ summary: 'Get lookup values used for onboarding forms' })
   getBusinessLookups() {
     return this.businessService.getBusinessLookups();
+  }
+
+  @Get(':slug/storefront')
+  @ApiOperation({
+    summary: 'Get business storefront by slug — includes profile, average rating and reviews (public)',
+  })
+  async getStorefront(
+    @Param('slug') slug: string,
+    @Query() query: ReviewQueryDTO,
+  ) {
+    return await this.businessService.getStorefront(slug, query);
   }
 }

@@ -22,6 +22,9 @@ import {
 import { BusinessDb } from './business.db';
 import { AuthenticationDb } from '../authentication/authentication.db';
 import { JwtService } from '@nestjs/jwt';
+import { ReviewsService } from '../reviews/reviews.service';
+import { ReviewTargetType } from 'src/constants';
+import { ReviewQueryDTO } from '../reviews/dtos/review.dto';
 
 @Injectable()
 export class BusinessService {
@@ -30,6 +33,7 @@ export class BusinessService {
     private readonly authDb: AuthenticationDb,
     private readonly businessValidationService: BusinessValidationService,
     private readonly jwtService: JwtService,
+    private readonly reviewsService: ReviewsService,
   ) {}
 
   private normalizeOperatingHours(input: any) {
@@ -416,6 +420,33 @@ export class BusinessService {
         businessDaysOfWeek: this.enumToOptions(BusinessDayOfWeek),
         businessOperatingStatus: this.enumToOptions(BusinessOperatingStatus),
       },
+    };
+  }
+
+  async getStorefront(slug: string, query: ReviewQueryDTO): Promise<IResponse> {
+    const business = await this.businessDb.findBySlug(slug);
+    if (!business) {
+      throw new NotFoundException('Business not found');
+    }
+
+    const [averageRating, reviewsResponse] = await Promise.all([
+      this.reviewsService.getAverageRating(
+        business.id,
+        ReviewTargetType.BUSINESS,
+      ),
+      this.reviewsService.getBusinessReviews(business.id, query),
+    ]);
+
+    return {
+      status: 'success',
+      statusCode: 200,
+      message: 'Storefront fetched successfully',
+      data: {
+        business,
+        averageRating,
+        reviews: reviewsResponse.data,
+      },
+      meta: (reviewsResponse as any).meta,
     };
   }
 }
