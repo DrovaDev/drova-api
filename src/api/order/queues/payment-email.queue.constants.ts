@@ -15,6 +15,7 @@ export type PaymentSuccessEmailEnqueueData = {
   referenceCode: string;
   amount: number;
   deliveryPin: string;
+  orderId?: string;
 };
 
 export type PaymentFailedEmailEnqueueData = {
@@ -34,6 +35,7 @@ export type PaymentSuccessEmailJobData = {
   referenceCode: string;
   amount: number;
   deliveryPin?: string;
+  orderId?: string;
 };
 
 export type PaymentFailedEmailJobData = {

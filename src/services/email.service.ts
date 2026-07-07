@@ -275,11 +275,11 @@ export class EmailService {
     const footer_note = this.escapeHtml(
       `If you have any questions, contact ${this.getSupportEmail()}.`,
     );
-    const ctaUrl = this.getAppUrl();
+    const trackingUrl = `${this.getAppUrl()}/track/${opts.referenceCode}`;
     const cta_section = `
       <tr>
         <td class="px" style="padding: 0 26px 24px 26px;">
-          <a class="btn" href="${this.escapeHtml(ctaUrl)}" style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color:#FFFFFF;">Track Your Order</a>
+          <a class="btn" href="${this.escapeHtml(trackingUrl)}" style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color:#FFFFFF;">Track Your Order</a>
         </td>
       </tr>
     `;
@@ -317,6 +317,7 @@ export class EmailService {
     businessName: string;
     referenceCode: string;
     amount: number;
+    orderId?: string;
   }): Promise<void> {
     const subject = 'New Paid Order — Action Required';
     const preheader = `Order ${opts.referenceCode} has been paid successfully.`;
@@ -324,11 +325,13 @@ export class EmailService {
     const footer_note = this.escapeHtml(
       `If you have any questions, contact ${this.getSupportEmail()}.`,
     );
-    const ctaUrl = this.getAppUrl();
+    const orderUrl = opts.orderId
+      ? `${this.getAppUrl()}/dashboard/orders/${opts.orderId}`
+      : `${this.getAppUrl()}/dashboard/orders`;
     const cta_section = `
       <tr>
         <td class="px" style="padding: 0 26px 24px 26px;">
-          <a class="btn" href="${this.escapeHtml(ctaUrl)}" style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color:#FFFFFF;">Open Dashboard</a>
+          <a class="btn" href="${this.escapeHtml(orderUrl)}" style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color:#FFFFFF;">View Order</a>
         </td>
       </tr>
     `;
@@ -610,11 +613,37 @@ export class EmailService {
     const copy = COPY[opts.status]?.[opts.kind];
     if (!copy) return;
 
-    await this.sendMail({
-      to: opts.to,
-      subject: copy.subject,
-      text: copy.body,
+    const trackingUrl = `${this.getAppUrl()}/track/${ref}`;
+    const year = String(new Date().getFullYear());
+    const footer_note = this.escapeHtml(
+      `If you have any questions, contact ${this.getSupportEmail()}.`,
+    );
+    const cta_section = `
+      <tr>
+        <td class="px" style="padding: 0 26px 24px 26px;">
+          <a class="btn" href="${this.escapeHtml(trackingUrl)}" style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color:#FFFFFF;">Track Order</a>
+        </td>
+      </tr>
+    `;
+
+    const body_html = this.escapeHtml(copy.body)
+      .replace(/\n\n+/g, '\n\n')
+      .split('\n\n')
+      .map((p) => `<p style="margin: 0 0 10px 0;">${p.replace(/\n/g, '<br />')}</p>`)
+      .join('');
+
+    const template = await this.readTemplateFile('drova-generic.html');
+    const html = this.renderPlaceholders(template, {
+      subject: this.escapeHtml(copy.subject),
+      preheader: this.escapeHtml(copy.body.trim().slice(0, 140)),
+      heading: this.escapeHtml(copy.subject),
+      body_html,
+      cta_section,
+      footer_note,
+      year,
     });
+
+    await this.sendMail({ to: opts.to, subject: copy.subject, html });
   }
 
   async sendNewOrderEmail(opts: {

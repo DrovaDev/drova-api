@@ -141,6 +141,7 @@ export class OrderPaymentService {
         referenceCode: order.referenceCode,
         amount: Number(order.totalAmount),
         deliveryPin,
+        orderId: order.id,
       });
 
       if (order.parties?.guestContactNumber) {

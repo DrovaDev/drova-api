@@ -79,6 +79,7 @@ export class PaymentEmailQueueProducer {
             name: data.businessName || 'Business',
             referenceCode: data.referenceCode,
             amount: data.amount,
+            orderId: data.orderId,
           },
           {
             ...baseOpts,

@@ -53,7 +53,7 @@ export class PaymentEmailQueueProcessor extends WorkerHost {
   }
 
   private async handlePaymentSuccess(job: Job<PaymentSuccessEmailJobData>) {
-    const { kind, to, name, referenceCode, amount, deliveryPin } = job.data;
+    const { kind, to, name, referenceCode, amount, deliveryPin, orderId } = job.data;
 
     if (kind === 'business') {
       await this.emailService.sendBusinessPaymentSuccessEmail({
@@ -61,6 +61,7 @@ export class PaymentEmailQueueProcessor extends WorkerHost {
         businessName: name,
         referenceCode,
         amount,
+        orderId,
       });
     } else {
       await this.emailService.sendPaymentSuccessEmail({
