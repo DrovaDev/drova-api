@@ -511,6 +511,13 @@ export class RiderService {
     if (!riderId) throw new BadRequestException('riderId is required');
 
     const rider = await this.findRiderOrThrow(businessId, riderId);
+
+    if (rider.availabilityStatus === AvailabilityStatus.ON_TRIP) {
+      throw new BadRequestException(
+        'Cannot change availability status while on a trip',
+      );
+    }
+
     rider.availabilityStatus = availabilityStatus;
     const saved = await this.riderDb.saveRider(rider);
 
