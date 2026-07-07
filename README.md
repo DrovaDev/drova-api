@@ -1,98 +1,217 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Drova — Last-Mile Delivery Platform
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Drova is a last-mile logistics platform built on top of the **Nomba** payment infrastructure. It connects **businesses** (senders), **riders** (couriers), and **customers** (recipients) into a single end-to-end delivery workflow — from order creation and payment to real-time tracking and payout.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Built for the **Nomba Hackathon 2026**.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## What Drova Does
 
-## Project setup
+- Businesses create delivery orders with quoted pricing or fixed-fee direct dispatch
+- Customers pay securely via Nomba-powered checkout links — funds are held in escrow until delivery is confirmed
+- Available riders receive order offers and are assigned to deliveries
+- A 6-digit delivery PIN confirms receipt at handoff
+- Businesses and riders withdraw earnings directly to their bank accounts via Nomba transfer
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | NestJS v11 (TypeScript) |
+| Database | PostgreSQL via Neon (TypeORM, `synchronize: true` in dev) |
+| Queues | BullMQ (Redis-backed) |
+| Payments | Nomba API (checkout, webhooks, bank transfers) |
+| WhatsApp | Neuron.ng Bot API |
+| Email | Nodemailer + BullMQ queue |
+| Auth | JWT (access + refresh tokens) |
+
+---
+
+## Key Features
+
+### Orders
+- **Quoted flow** — business creates a quotation, platform sends invoice, customer pays via Nomba link
+- **Direct/manual flow** — business dispatches immediately with cash, bank transfer, or online payment
+- Full status lifecycle: `pending → invoiced → payment_confirmed → offer_pending → assigned → en_route_pickup → picked_up → in_transit → arrived_at_delivery → completed`
+- Sender/recipient cross-field validation (different phone, email, address, and coordinates required)
+- Order tracking link: `https://drova-hackathon-mcun.vercel.app/track/<referenceCode>`
+
+### Payments & Wallets
+- Nomba escrow hold on payment → released to business wallet on delivery completion
+- Double-entry ledger: every naira is tracked with balanced journal entries across `BUSINESS`, `RIDER`, `PLATFORM`, and `CLEARING` wallets
+- Transfer fee (₦20) recorded as a `TRANSFER_FEE` journal — debits user wallet, credits clearing
+- Business and rider withdrawals via Nomba bank transfer API
+
+### Notifications
+- **WhatsApp** (via Neuron.ng): OTP login for riders, delivery PIN, all order status transitions to sender and recipient
+- **Email**: payment confirmation, invoice, order status updates — all with tracking/dashboard links
+
+### Rider Management
+- WhatsApp OTP-based login (no password)
+- Real-time location and availability tracking
+- Gamification: 6 tier levels (Bronze → Platinum) and 40+ badges across delivery milestones, speed, ratings, streaks, and earnings
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js >= 20
+- Redis (for BullMQ queues)
+- PostgreSQL (or a Neon connection string)
+
+### Installation
 
 ```bash
-$ npm install
+npm install
 ```
 
-## Compile and run the project
+
+### Run the Application
 
 ```bash
-# development
-$ npm run start
+# development (watch mode)
+npm run start:dev
 
-# watch mode
-$ npm run start:dev
+# production
+npm run start:prod
 
-# production mode
-$ npm run start:prod
+# background workers (email + payout queues)
+npm run start:worker
 ```
 
-## Run tests
+### Seed System Wallets
+
+On first run, seed the platform and clearing wallets:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run seed:system-wallets
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## API Documentation
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Swagger UI is available at:
 
+```
+http://localhost:3000/api/v1/docs
+```
+
+> Requires `ENABLE_SWAGGER=true` in your environment.
+
+All authenticated endpoints require a `Bearer <token>` header. Obtain a token via:
+
+- `POST /api/v1/auth/login` — business/staff login
+- `POST /api/v1/auth/login` with `userType: rider` — rider login (initiates WhatsApp OTP)
+- `POST /api/v1/auth/validate-rider-otp` — complete rider login with OTP
+
+---
+
+## Test Credentials
+
+### Business Account
+
+| Field | Value |
+|-------|-------|
+| Email | `abdulafeezadeyemo92@gmail.com` |
+| Password | `StrongPassword123!` |
+| User Type | `business` |
+
+**Login:**
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+POST /api/v1/auth/login
+{
+  "email": "abdulafeezadeyemo92@gmail.com",
+  "password": "StrongPassword123!",
+  "userType": "business"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+### Rider Account
 
-Check out a few resources that may come in handy when working with NestJS:
+Rider login uses a two-step WhatsApp OTP flow.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Field | Value |
+|-------|-------|
+| Phone Number | `+2348146604258` |
+| Test OTP | `123456` |
 
-## Support
+**Step 1 — Initiate login (sends OTP via WhatsApp):**
+```bash
+POST /api/v1/auth/login
+{
+  "telephoneNumber": "+2348146604258",
+  "userType": "rider"
+}
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+**Step 2 — Validate OTP:**
+```bash
+POST /api/v1/auth/validate-rider-otp
+{
+  "tempToken": "<token from step 1>",
+  "otp": "123456",
+  "deviceId": "any-unique-device-id"
+}
+```
 
-## Stay in touch
+> The `123456` bypass applies only to `+2348146604258`. All other numbers must use the real OTP delivered via WhatsApp.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
+
+## Project Structure
+
+```
+src/
+├── api/
+│   ├── authentication/   # JWT auth, OTP, rider login
+│   ├── business/         # Business profiles, settings
+│   ├── order/            # Order lifecycle, pricing, payments
+│   ├── rider/            # Rider profiles, location, availability
+│   ├── transactions/     # Wallets, journals, payouts, withdrawals
+│   ├── account/          # Nomba virtual account management
+│   ├── analytics/        # Dashboard analytics
+│   ├── webhooks/         # Nomba webhook handler
+│   └── reviews/          # Business and rider reviews
+├── services/
+│   ├── nomba.service.ts  # Nomba API client
+│   ├── neuron.service.ts # WhatsApp (Neuron.ng) client
+│   └── email.service.ts  # Email delivery
+├── constants/            # Enums and shared constants
+├── helpers/              # Utilities (phone normalization, etc.)
+└── scripts/              # One-off scripts (wallet seeding)
+```
+
+---
+
+## Order Flow Overview
+
+```
+Customer                 Business                  Platform                Rider
+   |                        |                          |                     |
+   |── Place Order ────────>|                          |                     |
+   |                        |── Create Quotation ─────>|                     |
+   |<─────────── Invoice ───|<─────────────────────────|                     |
+   |── Pay via Nomba ──────────────────────────────────>|                     |
+   |                        |<── Payment Confirmed ────|                     |
+   |                        |                          |── Offer to Riders ──>|
+   |                        |                          |<── Rider Accepts ───|
+   |<── Delivery PIN ───────|                          |                     |
+   |                        |                          |    [Rider delivers]  |
+   |── Confirm PIN ─────────────────────────────────────────────────────────>|
+   |                        |<── Funds Released ───────|                     |
+   |                        |                          |── Rider Payout ─────>|
+```
+
+---
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Private — Nomba Hackathon 2026 submission.
