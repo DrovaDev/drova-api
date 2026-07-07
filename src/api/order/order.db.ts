@@ -12,7 +12,9 @@ import {
   PickupMethod,
   DeliveryPriority,
   CancelledBy,
+  AvailabilityStatus,
 } from 'src/constants';
+import { Rider } from 'src/api/rider/schemas/rider.schema';
 
 @Injectable()
 export class OrderDb {
@@ -68,6 +70,13 @@ export class OrderDb {
           trackingRepo.create({ orderId: opts.orderId, assignedAt }),
         );
       }
+
+      await manager
+        .getRepository(Rider)
+        .update(
+          { id: opts.riderId as any },
+          { availabilityStatus: AvailabilityStatus.ON_TRIP },
+        );
 
       return true;
     });
@@ -647,6 +656,15 @@ export class OrderDb {
       cancellationReason: opts.cancellationReason,
     });
 
+    if (order.riderId) {
+      await this.orderModel.manager
+        .getRepository(Rider)
+        .update(
+          { id: order.riderId as any },
+          { availabilityStatus: AvailabilityStatus.AVAILABLE },
+        );
+    }
+
     return {
       cancelled: true,
       previousStatus: order.status,
@@ -663,9 +681,14 @@ export class OrderDb {
     const now = new Date();
 
     await this.orderModel.manager.transaction(async (manager) => {
-      await manager.getRepository(Orders).update(orderId, {
-        status: OrderStatus.COMPLETED,
+      const ordersRepo = manager.getRepository(Orders);
+
+      const order = await ordersRepo.findOne({
+        where: { id: orderId },
+        select: ['id', 'riderId'],
       });
+
+      await ordersRepo.update(orderId, { status: OrderStatus.COMPLETED });
 
       const trackingRepo = manager.getRepository(OrderTracking);
       const updated = await trackingRepo.update(
@@ -677,6 +700,15 @@ export class OrderDb {
         await trackingRepo.save(
           trackingRepo.create({ orderId, completedAt: now, deliveredAt: now }),
         );
+      }
+
+      if (order?.riderId) {
+        await manager
+          .getRepository(Rider)
+          .update(
+            { id: order.riderId as any },
+            { availabilityStatus: AvailabilityStatus.AVAILABLE },
+          );
       }
     });
   }
