@@ -5,6 +5,7 @@ import {
   RegisterDeviceTokenDTO,
   RemoveDeviceTokenDTO,
 } from './dtos/device-token.dto';
+import { InAppNotificationType } from 'src/constants';
 
 @Injectable()
 export class NotificationService {
@@ -69,11 +70,11 @@ export class NotificationService {
       this.sendToAuthId(authId, {
         title: 'New Delivery Request',
         body: 'You have a new delivery offer. Tap to view and accept.',
-        data: { type: 'ORDER_OFFER', orderId, offerId },
+        data: { type: InAppNotificationType.ORDER_OFFER, orderId, offerId },
       }),
       this.notificationDb.createInAppNotification({
         authId,
-        type: 'ORDER_OFFER',
+        type: InAppNotificationType.ORDER_OFFER,
         title: 'New Delivery Request',
         body: 'You have a new delivery offer. Tap to view and accept.',
         data: { orderId, offerId },
@@ -89,11 +90,11 @@ export class NotificationService {
       this.sendToAuthId(authId, {
         title: 'Order Assigned',
         body: 'You have been assigned a new delivery. Tap to view details.',
-        data: { type: 'ORDER_ASSIGNED', orderId },
+        data: { type: InAppNotificationType.ORDER_ASSIGNED, orderId },
       }),
       this.notificationDb.createInAppNotification({
         authId,
-        type: 'ORDER_ASSIGNED',
+        type: InAppNotificationType.ORDER_ASSIGNED,
         title: 'Order Assigned',
         body: 'You have been assigned a new delivery. Tap to view details.',
         data: { orderId },
@@ -106,16 +107,16 @@ export class NotificationService {
     orderId: string,
     status: string,
   ): Promise<void> {
-    const body = `Your order status has been updated to ${status.replace(/_/g, ' ')}.`;
+    const body = `Your order status has been updated to ${status.replaceAll('_', ' ')}.`;
     await Promise.all([
       this.sendToAuthId(authId, {
         title: 'Order Update',
         body,
-        data: { type: 'ORDER_STATUS_UPDATE', orderId, status },
+        data: { type: InAppNotificationType.ORDER_STATUS_UPDATE, orderId, status },
       }),
       this.notificationDb.createInAppNotification({
         authId,
-        type: 'ORDER_STATUS_UPDATE',
+        type: InAppNotificationType.ORDER_STATUS_UPDATE,
         title: 'Order Update',
         body,
         data: { orderId, status },
@@ -131,11 +132,11 @@ export class NotificationService {
       this.sendToAuthId(authId, {
         title: 'Delivery Confirmed',
         body: 'The delivery has been confirmed by the recipient. Well done!',
-        data: { type: 'ORDER_COMPLETED', orderId },
+        data: { type: InAppNotificationType.ORDER_COMPLETED, orderId },
       }),
       this.notificationDb.createInAppNotification({
         authId,
-        type: 'ORDER_COMPLETED',
+        type: InAppNotificationType.ORDER_COMPLETED,
         title: 'Delivery Confirmed',
         body: 'The delivery has been confirmed by the recipient. Well done!',
         data: { orderId },
@@ -151,11 +152,11 @@ export class NotificationService {
       this.sendToAuthId(authId, {
         title: 'Order Reassigned',
         body: 'This order has been reassigned to another rider.',
-        data: { type: 'ORDER_UNASSIGNED', orderId },
+        data: { type: InAppNotificationType.ORDER_UNASSIGNED, orderId },
       }),
       this.notificationDb.createInAppNotification({
         authId,
-        type: 'ORDER_UNASSIGNED',
+        type: InAppNotificationType.ORDER_UNASSIGNED,
         title: 'Order Reassigned',
         body: 'This order has been reassigned to another rider.',
         data: { orderId },
@@ -170,7 +171,7 @@ export class NotificationService {
   ): Promise<void> {
     await this.notificationDb.createInAppNotification({
       authId,
-      type: 'ORDER_OFFER_EXPIRED',
+      type: InAppNotificationType.ORDER_OFFER_EXPIRED,
       title: 'Rider Did Not Respond',
       body: `The rider did not accept order ${referenceCode} within 5 minutes. Please reassign.`,
       data: { orderId, referenceCode },
@@ -184,7 +185,7 @@ export class NotificationService {
   ): Promise<void> {
     await this.notificationDb.createInAppNotification({
       authId,
-      type: 'ORDER_OFFER_REJECTED',
+      type: InAppNotificationType.ORDER_OFFER_REJECTED,
       title: 'Rider Declined Order',
       body: `The rider declined order ${referenceCode}. Please reassign to another rider.`,
       data: { orderId, referenceCode },
@@ -204,11 +205,11 @@ export class NotificationService {
       this.sendToAuthId(authId, {
         title: 'Wallet Credited',
         body: `Your wallet has been credited with ${formatted}.`,
-        data: { type: 'WALLET_CREDITED', amount: String(amount) },
+        data: { type: InAppNotificationType.WALLET_CREDITED, amount: String(amount) },
       }),
       this.notificationDb.createInAppNotification({
         authId,
-        type: 'WALLET_CREDITED',
+        type: InAppNotificationType.WALLET_CREDITED,
         title: 'Wallet Credited',
         body: `Your wallet has been credited with ${formatted}.`,
         data: { amount: String(amount) },
@@ -223,7 +224,7 @@ export class NotificationService {
   ): Promise<void> {
     await this.notificationDb.createInAppNotification({
       authId,
-      type: 'NEW_ORDER',
+      type: InAppNotificationType.NEW_ORDER,
       title: 'New Delivery Request',
       body: `Order ${referenceCode} has been placed. Review and send an invoice to get started.`,
       data: { orderId, referenceCode },
