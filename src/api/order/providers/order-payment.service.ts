@@ -117,10 +117,15 @@ export class OrderPaymentService {
 
       const journalId = escrowResult.data?.id;
       if (journalId) {
-        await this.transactionsService.saveWebhookMeta({
-          journalId,
-          webhookMeta: webhookPayload,
-        });
+        await Promise.all([
+          this.transactionsService.saveWebhookMeta({
+            journalId,
+            webhookMeta: webhookPayload,
+          }),
+          this.orderDb.updateOrderPaymentStatus(order.id, PaymentStatus.HELD, {
+            escrowJournalId: journalId,
+          }),
+        ]);
       }
 
       this.logger.log(
@@ -300,23 +305,31 @@ export class OrderPaymentService {
     businessId: string;
     totalAmount: number;
     platformCommission: number;
+    escrowJournalId: string | null;
   }): Promise<void> {
+    if (!order.escrowJournalId) {
+      this.logger.error(
+        `Settlement skipped for orderId=${order.id} — escrowJournalId missing. Manual recovery required.`,
+      );
+      return;
+    }
+
     try {
-      const { businessWallet, clearingWallet, platformWallet } =
+      const { businessWallet, platformWallet } =
         await this.getSettlementWallets(order.businessId);
 
-      if (!businessWallet || !clearingWallet) {
+      if (!businessWallet) {
         this.logger.error(
-          `Wallets not found for settlement — orderId=${order.id} businessId=${order.businessId}`,
+          `Business wallet not found for settlement — orderId=${order.id} businessId=${order.businessId}`,
         );
         return;
       }
 
       await this.transactionsService.settleOrder({
         orderId: order.id,
+        escrowJournalId: order.escrowJournalId,
         businessWalletId: businessWallet.id,
         platformWalletId: platformWallet?.id,
-        clearingWalletId: clearingWallet.id,
         totalAmount: order.totalAmount,
         platformCommission: order.platformCommission,
         metadata: { businessId: order.businessId },
@@ -352,11 +365,10 @@ export class OrderPaymentService {
   }
 
   private async getSettlementWallets(businessId: string) {
-    const [businessWallet, clearingWallet, platformWallet] = await Promise.all([
+    const [businessWallet, platformWallet] = await Promise.all([
       this.walletDb.findWalletByOwner(WalletOwnerType.BUSINESS, businessId),
-      this.walletDb.findSystemWallet(WalletOwnerType.CLEARING),
       this.walletDb.findSystemWallet(WalletOwnerType.PLATFORM),
     ]);
-    return { businessWallet, clearingWallet, platformWallet };
+    return { businessWallet, platformWallet };
   }
 }

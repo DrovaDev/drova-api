@@ -110,14 +110,21 @@ export class TransactionsService {
 
   /**
    * Escrow release + settlement — called when order is completed.
-   * Posts the escrow journal, then creates a settlement journal
-   * splitting between business and platform.
+   *
+   * Step 1: Post the escrow hold journal (skipWalletUpdates — ledgerBalance
+   *         was already moved at hold creation; we just close the journal).
+   * Step 2: Create the ORDER_SETTLEMENT journal:
+   *         - DEBIT  business ledgerBalance  (releases the in-flight escrow)
+   *         - CREDIT business balance        (funds now available to withdraw)
+   *         - CREDIT platform balance        (commission)
+   *         Clearing is NOT touched here — it was debited at escrow hold and
+   *         will be credited when the business/rider withdraws.
    */
   async settleOrder(opts: {
     orderId: string;
+    escrowJournalId: string;
     businessWalletId: string;
     platformWalletId?: string;
-    clearingWalletId: string;
     totalAmount: number;
     platformCommission: number;
     metadata?: Record<string, any>;
@@ -135,19 +142,27 @@ export class TransactionsService {
       );
     }
 
+    // Step 1: close the escrow hold journal without re-applying balances
+    await this.transactionsDb.postJournal(opts.escrowJournalId, {
+      skipWalletUpdates: true,
+    });
+
     const businessPayout = opts.totalAmount - opts.platformCommission;
     const reference = `JRNL-SET-${this.helpers.generateTxReference()}`;
 
+    // Step 2: settlement journal — per-entry balanceField moves the right fields
     const entries: CreateEntryInput[] = [
       {
-        walletId: opts.clearingWalletId,
+        walletId: opts.businessWalletId,
         direction: LedgerEntryDirection.DEBIT,
         amount: opts.totalAmount,
+        balanceField: 'ledgerBalance', // release from escrow
       },
       {
         walletId: opts.businessWalletId,
         direction: LedgerEntryDirection.CREDIT,
         amount: businessPayout,
+        balanceField: 'balance', // now spendable
       },
     ];
 
@@ -156,6 +171,7 @@ export class TransactionsService {
         walletId: opts.platformWalletId,
         direction: LedgerEntryDirection.CREDIT,
         amount: opts.platformCommission,
+        balanceField: 'balance',
       });
     }
 
@@ -169,14 +185,9 @@ export class TransactionsService {
           totalAmount: opts.totalAmount,
           platformCommission: opts.platformCommission,
           businessPayout,
+          escrowJournalId: opts.escrowJournalId,
         },
         entries,
-        // Only credit available balance — ledgerBalance (escrow) is released separately below
-        balanceField: 'balance',
-        // Release the escrow counter that was set when the customer paid
-        ledgerBalanceAdjustments: [
-          { walletId: opts.businessWalletId, delta: -opts.totalAmount },
-        ],
       });
 
       return {

@@ -502,6 +502,7 @@ export class OrderDb {
       paidAt?: Date;
       deliveryPin?: string;
       escrowHeldAt?: Date;
+      escrowJournalId?: string;
       escrowReleasedAt?: Date;
       webhookPayload?: Record<string, any>;
     },
@@ -527,6 +528,7 @@ export class OrderDb {
     totalAmount: number;
     platformCommission: number;
     paymentStatus: string;
+    escrowJournalId: string | null;
   } | null> {
     const order = await this.orderModel.findOne({
       where: { id: orderId, riderId, isDeleted: false },
@@ -538,6 +540,7 @@ export class OrderDb {
         'totalAmount',
         'platformCommission',
         'paymentStatus',
+        'escrowJournalId',
       ],
     });
     if (!order) return null;
@@ -549,6 +552,7 @@ export class OrderDb {
       totalAmount: Number(order.totalAmount),
       platformCommission: Number(order.platformCommission),
       paymentStatus: order.paymentStatus,
+      escrowJournalId: order.escrowJournalId ?? null,
     };
   }
 

@@ -232,6 +232,9 @@ export class Orders {
   @Column({ type: 'timestamptz', nullable: true })
   escrowHeldAt?: Date;
 
+  @Column({ type: 'uuid', nullable: true })
+  escrowJournalId?: string;
+
   @Column({ type: 'timestamptz', nullable: true })
   escrowReleasedAt?: Date;
 

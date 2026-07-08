@@ -185,18 +185,17 @@ export class TransactionsDb {
 
       await manager.save(LedgerEntry, entryEntities as LedgerEntry[]);
 
-      // Update wallet balance field(s) based on caller intent:
-      //   'both'          (default) — balance + ledgerBalance
-      //   'balance'       — available balance only (e.g. settlement, rider payout)
-      //   'ledgerBalance' — escrow counter only (e.g. escrow refund)
-      const balanceField = input.balanceField ?? 'both';
+      // Update wallet balance field(s). Per-entry balanceField takes precedence;
+      // falls back to the journal-level balanceField (default: 'both').
+      const journalBalanceField = input.balanceField ?? 'both';
       for (const entry of input.entries) {
         const sign = entry.direction === LedgerEntryDirection.CREDIT ? 1 : -1;
+        const field = entry.balanceField ?? journalBalanceField;
         const update: Record<string, () => string> = {};
-        if (balanceField === 'both' || balanceField === 'balance') {
+        if (field === 'both' || field === 'balance') {
           update['balance'] = () => `"balance" + ${sign * entry.amount}`;
         }
-        if (balanceField === 'both' || balanceField === 'ledgerBalance') {
+        if (field === 'both' || field === 'ledgerBalance') {
           update['ledgerBalance'] = () =>
             `"ledgerBalance" + ${sign * entry.amount}`;
         }
