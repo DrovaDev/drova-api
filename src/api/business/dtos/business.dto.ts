@@ -27,6 +27,7 @@ import {
   NigerianState,
 } from 'src/constants';
 import { PaginationQueryDto } from 'src/helpers/global.dto';
+import { normalizePhoneNumber } from 'src/helpers/normalize-phone-number';
 
 export class BusinessLocationDTO {
   @IsString({ message: 'location.type must be a string' })
@@ -177,7 +178,6 @@ export class BusinessProfileSetupDTO {
   @IsOptional()
   @IsString({ message: 'Bank verification number must be a string' })
   @Length(11, 11, { message: 'BVN must be exactly 11 digits long' })
-  @Matches(/^\d{11}$/, { message: 'BVN must contain only digits' })
   @ApiPropertyOptional({
     description: 'Bank Verification number (BVN)',
     example: '12345678901',
@@ -190,6 +190,7 @@ export class BusinessProfileSetupDTO {
     description: 'Business contact number',
     example: '+2348012345678',
   })
+  @Transform(({ value }) => (value ? normalizePhoneNumber(String(value).trim()) : value))
   contactNumber: string;
 
   @IsOptional()
