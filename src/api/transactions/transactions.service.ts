@@ -902,10 +902,12 @@ export class TransactionsService {
       );
     }
 
-    if (!payload.withdrawalPin) {
-      throw new BadRequestException('Withdrawal PIN is required to make a withdrawal');
+    if (!isRider) {
+      if (!payload.withdrawalPin) {
+        throw new BadRequestException('Withdrawal PIN is required for business payouts');
+      }
+      await this.walletsService.verifyWithdrawalPin(wallet.id, payload.withdrawalPin);
     }
-    await this.walletsService.verifyWithdrawalPin(wallet.id, payload.withdrawalPin);
 
     return this.requestWithdrawal({
       walletId: wallet.id,
