@@ -45,9 +45,9 @@ export class WalletsController {
 
   @Post('withdrawal-pin')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
+  @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Set a withdrawal PIN for the business wallet' })
+  @ApiOperation({ summary: 'Set a withdrawal PIN for the wallet' })
   async setWithdrawalPin(
     @Auth() auth: ITokenPayload,
     @Body() dto: SetWithdrawalPinDTO,
@@ -57,9 +57,9 @@ export class WalletsController {
 
   @Patch('withdrawal-pin')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles(UserType.BUSINESS)
+  @Roles(UserType.BUSINESS, UserType.RIDER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update the withdrawal PIN for the business wallet' })
+  @ApiOperation({ summary: 'Update the withdrawal PIN for the wallet' })
   async updateWithdrawalPin(
     @Auth() auth: ITokenPayload,
     @Body() dto: UpdateWithdrawalPinDTO,

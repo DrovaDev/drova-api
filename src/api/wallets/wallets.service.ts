@@ -7,7 +7,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { IResponse } from 'src/interfaces/response.interface';
 import { WalletDb } from './wallet.db';
-import { WalletOwnerType } from 'src/constants';
+import { UserType, WalletOwnerType } from 'src/constants';
 import type { ITokenPayload } from 'src/interfaces/token.interface';
 import { SetWithdrawalPinDTO, UpdateWithdrawalPinDTO } from './dtos/wallet.dto';
 
@@ -44,14 +44,20 @@ export class WalletsService {
     };
   }
 
+  private resolveWalletOwner(auth: ITokenPayload): { ownerType: WalletOwnerType; ownerId: string } {
+    const isRider = auth.userType === UserType.RIDER;
+    const ownerType = isRider ? WalletOwnerType.RIDER : WalletOwnerType.BUSINESS;
+    const ownerId = isRider ? auth.riderId : auth.businessId;
+    if (!ownerId) throw new BadRequestException('Owner context is required');
+    return { ownerType, ownerId };
+  }
+
   async setWithdrawalPin(
     auth: ITokenPayload,
     dto: SetWithdrawalPinDTO,
   ): Promise<IResponse> {
-    const wallet = await this.walletDb.findWalletByOwner(
-      WalletOwnerType.BUSINESS,
-      auth.businessId!,
-    );
+    const { ownerType, ownerId } = this.resolveWalletOwner(auth);
+    const wallet = await this.walletDb.findWalletByOwner(ownerType, ownerId);
     if (!wallet) throw new NotFoundException('Wallet not found');
     if (wallet.hasWithdrawalPin) {
       throw new BadRequestException(
@@ -72,13 +78,9 @@ export class WalletsService {
     auth: ITokenPayload,
     dto: UpdateWithdrawalPinDTO,
   ): Promise<IResponse> {
+    const { ownerType, ownerId } = this.resolveWalletOwner(auth);
     const wallet = await this.walletDb.findWalletWithPin(
-      (
-        await this.walletDb.findWalletByOwner(
-          WalletOwnerType.BUSINESS,
-          auth.businessId!,
-        )
-      )?.id ?? '',
+      (await this.walletDb.findWalletByOwner(ownerType, ownerId))?.id ?? '',
     );
     if (!wallet) throw new NotFoundException('Wallet not found');
     if (!wallet.hasWithdrawalPin || !wallet.withdrawalPin) {
