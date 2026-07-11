@@ -43,6 +43,22 @@ export class WalletDb {
     });
   }
 
+  findWalletWithPin(walletId: string): Promise<Wallet | null> {
+    return this.walletModel
+      .createQueryBuilder('wallet')
+      .addSelect('wallet.withdrawalPin')
+      .where('wallet.id = :walletId', { walletId })
+      .andWhere('wallet.status = :status', { status: WalletStatus.READY })
+      .getOne();
+  }
+
+  async saveWithdrawalPin(walletId: string, hashedPin: string): Promise<void> {
+    await this.walletModel.update(walletId, {
+      withdrawalPin: hashedPin,
+      hasWithdrawalPin: true,
+    });
+  }
+
   async deductFromBalance(walletId: string, amount: number): Promise<void> {
     await this.walletModel
       .createQueryBuilder()

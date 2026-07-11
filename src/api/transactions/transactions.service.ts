@@ -36,6 +36,7 @@ import { RiderDb } from 'src/api/rider/rider.db';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Orders } from 'src/api/order/schemas/order.schema';
+import { WalletsService } from 'src/api/wallets/wallets.service';
 
 @Injectable()
 export class TransactionsService {
@@ -44,6 +45,7 @@ export class TransactionsService {
   constructor(
     private readonly transactionsDb: TransactionsDb,
     private readonly walletDb: WalletDb,
+    private readonly walletsService: WalletsService,
     private readonly accountDb: AccountDb,
     private readonly helpers: Helpers,
     private readonly utilService: UtilsService,
@@ -898,6 +900,13 @@ export class TransactionsService {
       throw new BadRequestException(
         'No payout account saved. Please add a payout account before requesting a withdrawal.',
       );
+    }
+
+    if (!isRider) {
+      if (!payload.withdrawalPin) {
+        throw new BadRequestException('Withdrawal PIN is required for business payouts');
+      }
+      await this.walletsService.verifyWithdrawalPin(wallet.id, payload.withdrawalPin);
     }
 
     return this.requestWithdrawal({

@@ -11,6 +11,7 @@ import { Payout } from './schemas/payout.schema';
 import { Wallet } from 'src/api/wallets/schemas/wallet.schema';
 import { Orders } from 'src/api/order/schemas/order.schema';
 import { WalletDb } from 'src/api/wallets/wallet.db';
+import { WalletsService } from 'src/api/wallets/wallets.service';
 import { Helpers } from 'src/helpers/random-generator';
 import { UtilsService } from 'src/helpers/utils.service';
 import { NombaService } from 'src/services/nomba.service';
@@ -33,6 +34,7 @@ import { PAYOUTS_QUEUE } from './queues/payouts.queue.constants';
     TransactionsService,
     TransactionsDb,
     WalletDb,
+    WalletsService,
     Helpers,
     UtilsService,
     NombaService,

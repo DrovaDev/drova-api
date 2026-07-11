@@ -44,7 +44,7 @@ export class Wallet {
     nullable: false,
     transformer: {
       to: (value: number) => value,
-      from: (value: string) => parseFloat(value),
+      from: (value: string) => Number.parseFloat(value),
     },
   })
   balance: number;
@@ -57,7 +57,7 @@ export class Wallet {
     nullable: false,
     transformer: {
       to: (value: number) => value,
-      from: (value: string) => parseFloat(value),
+      from: (value: string) => Number.parseFloat(value),
     },
   })
   ledgerBalance: number;
@@ -78,13 +78,17 @@ export class Wallet {
   })
   provider: WalletProvider;
 
-  @CreateDateColumn({
-    type: 'timestamptz',
-  })
+  /** Bcrypt hash of the withdrawal PIN — never returned in queries (select: false). */
+  @Column({ type: 'varchar', nullable: true, select: false })
+  withdrawalPin?: string;
+
+  /** Indicates to the frontend whether a withdrawal PIN has been set. */
+  @Column({ type: 'boolean', default: false, nullable: false })
+  hasWithdrawalPin: boolean = false;
+
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamptz',
-  })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 }

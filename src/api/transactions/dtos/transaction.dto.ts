@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -39,6 +40,15 @@ export class RequestPayoutDTO {
     example: 5000,
   })
   amount: number;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}$/, { message: 'Withdrawal PIN must be exactly 4 digits' })
+  @ApiPropertyOptional({
+    description: '4-digit withdrawal PIN (required for business accounts)',
+    example: '1234',
+  })
+  withdrawalPin?: string;
 }
 
 export class BusinessToRiderTransferDTO {
