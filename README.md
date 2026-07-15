@@ -156,6 +156,7 @@ All authenticated endpoints require a `Bearer <token>` header. Obtain a token vi
 | Email | `abdulafeezadeyemo92@gmail.com` |
 | Password | `StrongPassword123!` |
 | User Type | `business` |
+| Withdrawal pin | `1469` |
 
 **Login:**
 ```bash
